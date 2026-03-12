@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /private/
+Disallow: /admin/
+Disallow: /config/
+
+# Sitemap location (if available)
+# Sitemap: https://your-domain.com/sitemap.xml

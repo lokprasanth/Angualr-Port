@@ -1,0 +1,97 @@
+<section class="contact-page" id="contact">
+    <div class="container">
+        <!-- Floating Header -->
+        <div class="page-header" @fadeInUp>
+            <div class="header-nav">
+                <a routerLink="/home" class="back-pill">
+                    <span class="icon">⇠</span> Back
+                </a>
+                <span class="section-label">Connect</span>
+            </div>
+            <h1 class="section-title">Design <span class="accent-text">Without</span> Borders</h1>
+            <p class="section-subtitle">Based in India, working with clients worldwide.</p>
+        </div>
+
+        <div class="contact-layout">
+            <!-- LEFT: 3D Visual & Info Cards -->
+            <div class="visual-column" @fadeInLeft>
+                <div class="globe-container glass-card">
+                    <canvas #globeCanvas class="globe-canvas"></canvas>
+                    <div class="location-pulse">
+                        <div class="pulse-dot"></div>
+                        <span class="location-text">Open for worldwide collaboration</span>
+                    </div>
+                </div>
+
+                <div class="mini-info-grid">
+                    @for (info of contactInfo; track info.label) {
+                    <div class="info-tile glass-card">
+                        <span class="tile-icon">{{ info.icon }}</span>
+                        <div class="tile-details">
+                            <span class="tile-label">{{ info.label }}</span>
+                            @if (info.link) {
+                            <a [href]="info.link" target="_blank" class="tile-value">{{ info.value }}</a>
+                            } @else {
+                            <span class="tile-value">{{ info.value }}</span>
+                            }
+                        </div>
+                    </div>
+                    }
+                </div>
+            </div>
+
+            <!-- RIGHT: Modern Contact Form -->
+            <div class="form-column" @fadeInRight>
+                <div class="form-wrapper glass-card">
+                    <div class="form-header">
+                        <h3>Drop a Brief</h3>
+                        <p>Tell me about your vision and let's make it reality.</p>
+                    </div>
+
+                    <form class="interaction-form" (ngSubmit)="onSubmit()">
+                        @if (isSubmitted()) {
+                        <div class="confirmation-view">
+                            <div class="conf-icon">✨</div>
+                            <h3>Inquiry Received</h3>
+                            <p>Thank you. I'll get back to you within 24 hours.</p>
+                        </div>
+                        } @else {
+                        <div class="field-mesh">
+                            <!-- Honeypot Field (Anti-Spam) -->
+                            <div class="hp-field" style="display: none; position: absolute; visibility: hidden;">
+                                <input type="text" name="honeypot" [(ngModel)]="formData.honeypot" tabindex="-1" autocomplete="off" />
+                            </div>
+
+                            <div class="form-field">
+                                <label>Your Name</label>
+                                <input type="text" name="name" [(ngModel)]="formData.name" placeholder="Who are you?" required />
+                            </div>
+
+                            <div class="form-field">
+                                <label>Email Address</label>
+                                <input type="email" name="email" [(ngModel)]="formData.email" placeholder="Where to reach you?" required />
+                            </div>
+
+                            <div class="form-field full-width">
+                                <label>Your Message</label>
+                                <textarea name="message" [(ngModel)]="formData.message" rows="4" placeholder="Describe your project goals..." required></textarea>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="cta-submit" [disabled]="isSubmitting()">
+                            @if (isSubmitting()) {
+                            <div class="loading-state">
+                                <span class="dot-pulse"></span>
+                                Processing...
+                            </div>
+                            } @else {
+                            <span class="btn-content">Deploy Message 🚀</span>
+                            }
+                        </button>
+                        }
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

@@ -1,0 +1,253 @@
+.projects-section {
+    position: relative;
+    background: var(--bg-primary);
+    overflow: hidden;
+}
+
+// Modern Filter Tab System
+.filter-tab-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 60px;
+}
+
+.filter-tab-group {
+    display: flex;
+    padding: 6px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 40px;
+    gap: 4px;
+}
+
+.filter-tab {
+    position: relative;
+    padding: 10px 24px;
+    border-radius: 30px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    transition: all var(--transition-fast);
+    z-index: 1;
+
+    &:hover {
+        color: var(--text-primary);
+    }
+
+    &.active {
+        color: var(--bg-primary);
+    }
+
+    .active-indicator {
+        position: absolute;
+        inset: 0;
+        background: var(--accent-primary);
+        border-radius: inherit;
+        z-index: -1;
+        box-shadow: 0 4px 15px var(--accent-glow);
+    }
+}
+
+// Project Mesh (Asymmetric Grid)
+.projects-mesh {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 32px;
+
+    @media (max-width: 968px) {
+        grid-template-columns: 1fr;
+    }
+}
+
+.project-card {
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    overflow: hidden;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    transition: all var(--transition-smooth);
+
+    &.feature-card {
+        grid-column: span 1;
+        // Large card styling can be added here if needed
+    }
+
+    &:hover {
+        transform: translateY(-10px);
+        border-color: var(--accent-primary);
+        box-shadow: var(--shadow-lg);
+
+        .image-box {
+            transform: scale(0.98);
+            border-radius: 20px;
+        }
+
+        .card-overlay {
+            opacity: 1;
+        }
+
+        .placeholder-icon {
+            transform: scale(1.1) rotate(5deg);
+        }
+    }
+}
+
+.card-visual {
+    padding: 12px;
+    
+    .image-box {
+        position: relative;
+        height: 280px;
+        border-radius: 12px;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all var(--transition-smooth);
+
+        .project-tag {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            padding: 6px 14px;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            border-radius: 30px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            z-index: 2;
+        }
+
+        .placeholder-icon {
+            font-size: 4rem;
+            filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.3));
+            transition: transform var(--transition-spring);
+        }
+
+        .card-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity var(--transition-smooth);
+            z-index: 3;
+
+            .view-project-btn {
+                position: relative;
+                padding: 14px 28px;
+                background: #fff;
+                color: #000;
+                border-radius: 40px;
+                font-weight: 700;
+                font-size: 0.9rem;
+                overflow: hidden;
+                
+                .btn-glow {
+                    position: absolute;
+                    inset: 0;
+                    background: var(--accent-primary);
+                    opacity: 0;
+                    transition: opacity 0.3s;
+                }
+
+                &:hover .btn-glow {
+                    opacity: 0.1;
+                }
+            }
+        }
+    }
+}
+
+.card-body {
+    padding: 32px;
+
+    .title-wrap {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+
+        .project-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            
+            a {
+                color: var(--text-primary);
+                &:hover { color: var(--accent-primary); }
+            }
+        }
+
+        .link-circle {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            font-size: 1.1rem;
+            transition: all var(--transition-fast);
+
+            &:hover {
+                background: var(--accent-primary);
+                transform: rotate(15deg);
+                border-color: var(--accent-primary);
+            }
+        }
+    }
+
+    .project-desc {
+        font-size: 1.05rem;
+        color: var(--text-secondary);
+        line-height: 1.7;
+        margin-bottom: 24px;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+}
+
+.tech-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+
+    .tech-pill {
+        padding: 6px 14px;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: 30px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--text-muted);
+        transition: all var(--transition-fast);
+
+        &:hover {
+            border-color: var(--accent-primary);
+            color: var(--text-primary);
+        }
+    }
+}
+
+.card-deco {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    width: 60px;
+    height: 60px;
+    border-right: 1px solid var(--border-hover);
+    border-bottom: 1px solid var(--border-hover);
+    opacity: 0.2;
+    pointer-events: none;
+}

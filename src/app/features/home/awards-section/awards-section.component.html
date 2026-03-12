@@ -1,0 +1,46 @@
+<section class="awards-section section" id="awards">
+    <div class="container">
+        <div class="section-header" @fadeInUp>
+            <span class="section-label">Milestones</span>
+            <h2 class="section-title">Recognition & <span class="accent-text">Accolades</span></h2>
+            <p class="section-subtitle">A timeline of professional milestones and official recognitions</p>
+        </div>
+
+        <div class="awards-bento">
+            @for (award of awards(); track award.id; let i = $index) {
+            <a [routerLink]="['/awards', award.id]" 
+               class="recognition-card glass-card"
+               [class.master-block]="i === 1"
+               @fadeInUp> <!-- Make second item prominent -->
+                
+                <div class="card-meta">
+                    <span class="award-year">{{ award.year }}</span>
+                    <div class="award-tag">Honors</div>
+                </div>
+
+                <div class="card-visual">
+                    <div class="icon-sphere">
+                        <span class="main-icon">{{ award.icon }}</span>
+                        <div class="halo"></div>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div class="org-line">
+                        <span class="org-name">{{ award.organization }}</span>
+                        <div class="org-dot"></div>
+                    </div>
+                    <h3 class="award-title">{{ award.title }}</h3>
+                    <p class="award-desc">{{ award.description }}</p>
+                </div>
+
+                <!-- Modern interactive footer -->
+                <div class="card-action">
+                    <span class="action-text">Explore Milestone</span>
+                    <div class="action-line"></div>
+                </div>
+            </a>
+            }
+        </div>
+    </div>
+</section>

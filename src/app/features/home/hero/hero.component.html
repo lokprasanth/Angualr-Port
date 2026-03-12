@@ -1,0 +1,88 @@
+<section class="hero" id="hero">
+    <!-- Background Effects -->
+    <div class="hero-bg">
+        <div class="grid-lines"></div>
+    </div>
+
+    <div class="hero-container container">
+        <!-- LEFT: Text Content -->
+        <div class="hero-text" @fadeInLeft>
+            <div class="hero-label">
+                <span class="status-dot"></span>
+                Open to Opportunities
+            </div>
+
+            <h1 class="hero-heading">
+                Hello, I'm<br>
+                <span class="typing-wrapper">
+                    <span class="typed-text gradient-text">{{ displayText() }}</span>
+                    <span class="cursor" [class.typing]="isTyping()">|</span>
+                </span>
+            </h1>
+
+            <p class="hero-subtitle">
+                Lok Prasanth Alamanda — Developer & Analyst
+            </p>
+
+            <p class="hero-description">
+                Frontend / UI Developer with nearly 2 years of experience building scalable 
+                and responsive web applications. Specialist in React.js, JavaScript, and TypeScript.
+            </p>
+
+            <div class="hero-cta">
+                <a routerLink="/projects" class="btn btn-primary" (click)="onCTAClick('projects')">
+                    <span>🚀</span> View Projects
+                </a>
+                <a routerLink="/contact" class="btn btn-outline" (click)="onCTAClick('contact')">
+                    <span>💬</span> Contact Me
+                </a>
+            </div>
+
+            <div class="hero-stats">
+                <div class="stat">
+                    <span class="stat-number">20+</span>
+                    <span class="stat-label">Components</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number">2+</span>
+                    <span class="stat-label">Years Exp.</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number">90+</span>
+                    <span class="stat-label">Perf Score</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT: 3D Character -->
+        <div class="hero-3d" @fadeInRight>
+            <div class="canvas-wrapper" [class.loaded]="isLoaded()">
+                <canvas #threeCanvas class="three-canvas"></canvas>
+
+                <!-- Speech Bubble -->
+                @if (showSpeechBubble()) {
+                <div class="speech-bubble" 
+                     [class.listening]="voiceControl.isListening()"
+                     [class.is-speaking]="voiceControl.isSpeaking()">
+                    <p>{{ speechText() }}</p>
+                    <div class="bubble-tail"></div>
+                </div>
+                }
+
+                <!-- Voice Toggle -->
+                <button class="voice-toggle" (click)="toggleVoice()"
+                    [class.listening]="voiceControl.isListening()"
+                    [class.speaking]="voiceControl.isSpeaking()"
+                    [attr.aria-label]="voiceControl.isListening() ? 'Stop voice control' : 'Start voice control'">
+                    {{ voiceControl.isListening() ? '🎙️' : '🤖' }}
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scroll Indicator -->
+    <div class="scroll-indicator">
+        <div class="scroll-line"></div>
+        <span>Scroll Down</span>
+    </div>
+</section>

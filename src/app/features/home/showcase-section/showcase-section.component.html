@@ -1,0 +1,43 @@
+<section class="showcase-section section" id="showcase">
+    <div class="container">
+        <div class="section-header" @fadeInUp>
+            <span class="section-label">Capabilities</span>
+            <h2 class="section-title">Technological <span class="accent-text">Expertise</span></h2>
+            <p class="section-subtitle">Bridging complex requirements with elegant digital architecture</p>
+        </div>
+
+        <div class="expertise-bento">
+            @for (item of items(); track item.id; let i = $index) {
+            <a [routerLink]="['/showcase']" [queryParams]="{ id: item.id }" 
+               class="expertise-block glass-card"
+               [class.large-block]="i === 0 || i === 3"
+               @fadeInUp>
+                
+                <div class="block-visual">
+                    <div class="icon-orb" [style.color]="item.color">
+                        <span class="orb-icon">{{ item.icon }}</span>
+                        <div class="orb-glow" [style.background]="item.color"></div>
+                    </div>
+                    <!-- Decorative scanning line for block -->
+                    <div class="block-scanner"></div>
+                </div>
+
+                <div class="block-content">
+                    <div class="block-meta">
+                        <h3 class="block-title">{{ item.title }}</h3>
+                        <div class="block-indicator" [style.background]="item.color"></div>
+                    </div>
+                    <p class="block-desc">{{ item.description }}</p>
+                    
+                    <div class="block-footer">
+                        <span class="view-tag">View Expertise →</span>
+                    </div>
+                </div>
+
+                <!-- Abstract decorative elements -->
+                <div class="block-bg-deco"></div>
+            </a>
+            }
+        </div>
+    </div>
+</section>

@@ -1,0 +1,62 @@
+<nav class="navbar" [class.scrolled]="isScrolled()" id="navbar">
+    <div class="nav-container">
+        <!-- Logo -->
+        <a class="nav-logo" routerLink="/home" (click)="closeMobile()">
+            <span class="logo-icon">⚡</span>
+            <span class="logo-text">Portfolio</span>
+        </a>
+
+        <!-- Desktop Links -->
+        <ul class="nav-links">
+            @for (link of navLinks; track link.path) {
+            <li>
+                <a class="nav-link" [routerLink]="link.path" routerLinkActive="active"
+                    (click)="scrollToSection(link.fragment)">
+                    {{ link.label }}
+                    <span class="link-underline"></span>
+                </a>
+            </li>
+            }
+        </ul>
+
+        <!-- Right Actions -->
+        <div class="nav-actions">
+            <!-- Theme Toggle -->
+            <!-- Modern Theme Toggle Switch -->
+            <div class="theme-switch-wrapper">
+                <button class="theme-switch" (click)="toggleTheme()" 
+                    [class.is-dark]="theme.isDark()"
+                    [attr.aria-label]="theme.isDark() ? 'Switch to light mode' : 'Switch to dark mode'">
+                    <div class="switch-track">
+                        <span class="switch-icon sun">☀️</span>
+                        <span class="switch-icon moon">🌙</span>
+                    </div>
+                    <div class="switch-thumb"></div>
+                </button>
+            </div>
+
+            <!-- Mobile Hamburger -->
+            <button class="hamburger" [class.active]="isMobileOpen()" (click)="toggleMobile()" aria-label="Toggle menu">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </button>
+        </div>
+    </div>
+</nav>
+
+<!-- Mobile Menu (Moved outside for viewport-relative fixed positioning) -->
+@if (isMobileOpen()) {
+<div class="mobile-menu" @slideInOut>
+    <ul class="mobile-links">
+        @for (link of navLinks; track link.path) {
+        <li>
+            <a class="mobile-link" [routerLink]="link.path" routerLinkActive="active"
+                (click)="scrollToSection(link.fragment)">
+                {{ link.label }}
+            </a>
+        </li>
+        }
+    </ul>
+</div>
+}

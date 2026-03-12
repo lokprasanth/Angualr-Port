@@ -1,0 +1,73 @@
+<section class="about-section section" id="about">
+    <div class="container">
+        <div class="about-layout">
+            <!-- LEFT: Modern Visual Stack -->
+            <div class="about-visual" @fadeInUp>
+                <div class="visual-stack">
+                    <div class="main-frame glass-card">
+                        <div class="profile-placeholder">
+                            <span>🎭</span>
+                        </div>
+                        <!-- Animated Scanner Effect -->
+                        <div class="scanner-line"></div>
+                    </div>
+                    
+                    <!-- Floating Achievement Cards -->
+                    <div class="floating-badge top-right glass-card" @fadeInRight>
+                        <span class="badge-icon">⚡</span>
+                        <div class="badge-content">
+                            <span class="badge-val">3+</span>
+                            <span class="badge-lbl">Years Exp.</span>
+                        </div>
+                    </div>
+                    
+                    <div class="floating-badge bottom-left glass-card" @fadeInLeft>
+                        <span class="badge-icon">🚀</span>
+                        <div class="badge-content">
+                            <span class="badge-val">20+</span>
+                            <span class="badge-lbl">Projects</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Decorative Grids -->
+                    <div class="deco-dots"></div>
+                </div>
+            </div>
+
+            <!-- RIGHT: Bento-style Content -->
+            <div class="about-content">
+                <div class="content-header" @fadeInUp>
+                    <span class="section-label">The Identity</span>
+                    <h2 class="section-title">Merging <span class="accent-text">Logic</span> with <span class="accent-text">Creativity</span></h2>
+                </div>
+
+                <div class="bento-grid">
+                    <div class="bento-item main-bio glass-card" @fadeInUp>
+                        <p>
+                            I specialize in crafting high-end digital solutions that bridge the gap between 
+                            complex back-end logic and stunning front-end interactions. My goal is to build 
+                            software that doesn't just work—it inspires.
+                        </p>
+                    </div>
+
+                    <div class="bento-item skills-brief glass-card" @fadeInUp>
+                        <div class="tech-chips">
+                            @for (skill of skills; track skill.name) {
+                            <div class="tech-chip" [style.border-color]="skill.color + '44'">
+                                <span class="chip-dot" [style.background]="skill.color"></span>
+                                <span class="chip-name">{{ skill.name }}</span>
+                            </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <div class="about-cta" @fadeInUp>
+                    <a routerLink="/about" class="btn btn-primary">
+                        <span>🔍</span> Explore Full Bio
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

@@ -1,0 +1,19 @@
+<!-- Loading Overlay -->
+@if (isLoading()) {
+<div class="loading-overlay">
+  <div class="loading-content">
+    <div class="spinner"></div>
+    <p class="loading-text">Loading Portfolio...</p>
+  </div>
+</div>
+}
+
+<!-- App Shell -->
+<app-navbar />
+
+<main class="main-content" [@routeAnimation]="getRouteAnimationData()">
+  <router-outlet />
+</main>
+
+<app-footer />
+<app-voice-assistant />

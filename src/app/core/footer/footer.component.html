@@ -1,0 +1,57 @@
+<footer class="footer" id="footer">
+    <div class="container">
+        <div class="footer-grid">
+            <!-- Brand -->
+            <div class="footer-brand">
+                <a class="footer-logo" routerLink="/home">
+                    <span class="logo-icon">⚡</span>
+                    <span class="logo-text">Portfolio</span>
+                </a>
+                <p class="footer-desc">Crafting digital experiences with passion and precision. Let's build something
+                    extraordinary together.</p>
+                <div class="social-links">
+                    @for (social of socialLinks; track social.label) {
+                    <a [href]="social.url" target="_blank" rel="noopener noreferrer" class="social-link"
+                        [attr.aria-label]="social.label">
+                        <span>{{ social.icon }}</span>
+                    </a>
+                    }
+                </div>
+            </div>
+
+            <!-- Quick Links -->
+            <div class="footer-links-col">
+                <h4 class="footer-heading">Quick Links</h4>
+                <ul class="footer-links">
+                    @for (link of quickLinks; track link.path) {
+                    <li>
+                        <a [routerLink]="link.path" class="footer-link">{{ link.label }}</a>
+                    </li>
+                    }
+                </ul>
+            </div>
+
+            <!-- Resume -->
+            <div class="footer-links-col">
+                <h4 class="footer-heading">Resources</h4>
+                <ul class="footer-links">
+                    <li>
+                        <a href="#" class="footer-link resume-link">
+                            📄 Download Resume
+                        </a>
+                    </li>
+                    <li>
+                        <a routerLink="/contact" class="footer-link">💬 Get in Touch</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <p class="copyright">© {{ currentYear }} Portfolio. All rights reserved.</p>
+            <button class="scroll-top-btn" (click)="scrollToTop()" aria-label="Scroll to top">
+                <span>↑</span>
+            </button>
+        </div>
+    </div>
+</footer>

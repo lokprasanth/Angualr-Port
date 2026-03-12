@@ -1,0 +1,78 @@
+<section class="projects-section section" id="projects">
+    <div class="container">
+        <div class="section-header" @fadeInUp>
+            <span class="section-label">Selected Works</span>
+            <h2 class="section-title">Innovative <span class="accent-text">Solutions</span></h2>
+            <p class="section-subtitle">A curation of high-impact digital experiences across multiple domains</p>
+        </div>
+
+        <!-- Trendy Filter Tab -->
+        <div class="filter-tab-container" @fadeInUp>
+            <div class="filter-tab-group">
+                @for (cat of categories; track cat) {
+                <button class="filter-tab" [class.active]="activeFilter() === cat" (click)="filterBy(cat)">
+                    {{ cat }}
+                    @if (activeFilter() === cat) {
+                    <div class="active-indicator"></div>
+                    }
+                </button>
+                }
+            </div>
+        </div>
+
+        <!-- Modern Project Mesh -->
+        <div class="projects-mesh">
+            @for (project of projects(); track project.id; let i = $index) {
+            <div class="project-card glass-card" [class.feature-card]="i % 3 === 0" @fadeInUp>
+                <div class="card-visual">
+                    <div class="image-box"
+                        [style.background]="project.category === 'Frontend' ? 'linear-gradient(45deg, #1a2a22, #5fa879)' : 
+                                           project.category === 'Data' ? 'linear-gradient(45deg, #1a242a, #2e5e8a)' : 
+                                           'linear-gradient(45deg, #2a241a, #a88b5f)'">
+                        
+                        <div class="project-tag">{{ project.category }}</div>
+                        
+                        <span class="placeholder-icon">{{ 
+                            project.category === 'Frontend' ? '⚛️' : 
+                            project.category === 'Data' ? '📊' : 
+                            project.category === 'Product' ? '⚙️' : '🌐'
+                        }}</span>
+
+                        <!-- Interactive Overlay -->
+                        <div class="card-overlay">
+                            <a [routerLink]="['/projects', project.id]" class="view-project-btn">
+                                <span>Explore Project</span>
+                                <div class="btn-glow"></div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div class="title-wrap">
+                        <h3 class="project-title">
+                            <a [routerLink]="['/projects', project.id]">{{ project.title }}</a>
+                        </h3>
+                        <div class="project-links">
+                            <a [href]="project.githubUrl" target="_blank" rel="noopener" class="link-circle" aria-label="GitHub">
+                                🐙
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <p class="project-desc">{{ project.description }}</p>
+
+                    <div class="tech-pills">
+                        @for (tech of project.techStack; track tech) {
+                        <span class="tech-pill">{{ tech }}</span>
+                        }
+                    </div>
+                </div>
+                
+                <!-- Corner Deco -->
+                <div class="card-deco"></div>
+            </div>
+            }
+        </div>
+    </div>
+</section>

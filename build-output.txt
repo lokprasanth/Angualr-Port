@@ -1,0 +1,113 @@
+﻿[33mΓ¥»[39m Building...
+[32mΓ£ö[39m Building...
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m                   [2m | [22m [1mRaw size[22m[2m | [22m[1mEstimated transfer size[22m
+[32mchunk-GNE5AK7Y.js[39m  [2m | [22m[2m-[22m                       [2m | [22m[36m231.69 kB[39m[2m | [22m               [36m63.12 kB[39m
+[32mmain-62BJHLDK.js[39m   [2m | [22m[2mmain[22m                    [2m | [22m [36m74.34 kB[39m[2m | [22m               [36m19.85 kB[39m
+[32mstyles-R46X7ZLJ.css[39m[2m | [22m[2mstyles[22m                  [2m | [22m  [36m5.52 kB[39m[2m | [22m                [36m1.56 kB[39m
+
+[1m [22m                  [2m | [22m[1mInitial total[22m           [2m | [22m[1m311.55 kB[22m[2m | [22m               [1m84.52 kB[22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m                   [2m | [22m [1mRaw size[22m[2m | [22m[1mEstimated transfer size[22m
+[32mchunk-L6Y4JYS4.js[39m  [2m | [22m[2mhome-component[22m          [2m | [22m[36m545.76 kB[39m[2m | [22m              [36m115.28 kB[39m
+[32mchunk-QVX6Y55P.js[39m  [2m | [22m[2mcontact-page-component[22m  [2m | [22m [36m37.35 kB[39m[2m | [22m                [36m8.79 kB[39m
+[32mchunk-UGSWUAGD.js[39m  [2m | [22m[2mprojects-page-component[22m [2m | [22m  [36m6.25 kB[39m[2m | [22m                [36m1.99 kB[39m
+[32mchunk-AM2OWNB3.js[39m  [2m | [22m[2mproject-detail-component[22m[2m | [22m  [36m4.30 kB[39m[2m | [22m                [36m1.57 kB[39m
+[32mchunk-BP7TWQS2.js[39m  [2m | [22m[2m-[22m                       [2m | [22m  [36m4.13 kB[39m[2m | [22m                [36m1.40 kB[39m
+[32mchunk-TUNIYSJU.js[39m  [2m | [22m[2mshowcase-page-component[22m [2m | [22m  [36m3.65 kB[39m[2m | [22m                [36m1.27 kB[39m
+[32mchunk-O7VEGU66.js[39m  [2m | [22m[2mawards-page-component[22m   [2m | [22m  [36m3.50 kB[39m[2m | [22m                [36m1.25 kB[39m
+[32mchunk-ZR6LD2UU.js[39m  [2m | [22m[2maward-detail-component[22m  [2m | [22m  [36m2.53 kB[39m[2m | [22m                [36m1.02 kB[39m
+
+Application bundle generation complete. [12.152 seconds] - 2026-02-23T06:35:19.580Z
+
+node.exe : 
+[1m[33m[33mΓû▓ [43;33m[
+[43;30mWARNING[43;33m][0m 
+[1mDeprecation[0m 
+[1m[35m[plugin 
+angular-sass][0m
+At line:1 char:1
++ & "C:\Program 
+Files\nodejs/node.exe" 
+"C:\Program 
+Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~
+    + CategoryInfo          
+    : NotSpecified: ([1m  
+  [33m[33mΓ...gular-sass   
+ ][0m:String) [], Remot    
+eException
+    + FullyQualifiedErrorId 
+    : NativeCommandError
+ 
+
+    src/styles.scss:292:16:
+[37m      292 Γöé     
+background: 
+[32m[37mlighten(#6c63ff, 
+10%);
+          Γò╡               
+  [32m^[0m
+
+
+  Global built-in functions 
+are deprecated and will be 
+removed in Dart Sass 3.0.0.
+  Use color.adjust instead.
+  
+  More info and automated 
+migrator: [4mhttps://sass-l
+ang.com/d/import[0m
+
+  The plugin "angular-sass" 
+was triggered by this import
+
+    angular:styles/global:st
+yles:1:8:
+[37m      1 Γöé @import 
+[32m'src/styles.scss'[37m;
+        Γò╡         
+[32m~~~~~~~~~~~~~~~~~[0m
+
+
+[33mΓû▓ [43;33m[[43;30mWA
+RNING[43;33m][0m 
+[1mDeprecation[0m 
+[1m[35m[plugin 
+angular-sass][0m
+
+    src/styles.scss:292:16:
+[37m      292 Γöé     
+background: 
+[32m[37mlighten(#6c63ff, 
+10%);
+          Γò╡               
+  [32m^[0m
+
+
+  lighten() is deprecated. 
+Suggestions:
+  
+  color.scale($color, 
+$lightness: 32.6923076923%)
+  color.adjust($color, 
+$lightness: 10%)
+  
+  More info: [4mhttps://sas
+s-lang.com/d/color-functions
+[0m
+
+  The plugin "angular-sass" 
+was triggered by this import
+
+    angular:styles/global:st
+yles:1:8:
+[37m      1 Γöé @import 
+[32m'src/styles.scss'[37m;
+        Γò╡         
+[32m~~~~~~~~~~~~~~~~~[0m
+
+[39m[22m
+Output location: C:\Users\Lok\Desktop\Angular\dist\portfolio
+
