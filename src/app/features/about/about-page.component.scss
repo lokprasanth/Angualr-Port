@@ -30,12 +30,15 @@
 
     @media (max-width: 968px) {
         grid-template-columns: 1fr;
+        gap: 32px;
+        text-align: center;
     }
 }
 
 .bio-title {
-    font-size: 2.2rem;
+    font-size: clamp(1.8rem, 5vw, 2.8rem);
     margin-bottom: 24px;
+    font-weight: 800;
 }
 
 .bio-text {
@@ -55,11 +58,17 @@
     align-items: center;
     justify-content: center;
     border-radius: 30px;
+    max-width: 100%;
 
     span {
-        font-size: 6rem;
+        font-size: clamp(4rem, 15vw, 6rem);
         opacity: 0.8;
         filter: drop-shadow(0 0 20px var(--accent-primary));
+    }
+
+    @media (max-width: 968px) {
+        max-width: 300px;
+        margin: 0 auto;
     }
 }
 
@@ -79,6 +88,10 @@
     max-width: 800px;
     margin: 0 auto;
     padding-left: 30px;
+
+    @media (max-width: 480px) {
+        padding-left: 20px;
+    }
 
     &::before {
         content: '';
@@ -109,6 +122,10 @@
     border-radius: 50%;
     background: var(--accent-primary);
     box-shadow: 0 0 10px var(--accent-primary);
+
+    @media (max-width: 480px) {
+        left: -24px;
+    }
 }
 
 .timeline-content {

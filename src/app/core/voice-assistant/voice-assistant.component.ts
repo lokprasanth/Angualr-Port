@@ -23,7 +23,8 @@ import * as THREE from 'three';
     template: `
     <div class="voice-assistant-container" 
          [class.listening]="voiceControl.isListening()"
-         [class.sticky-visible]="shouldShowSticky()">
+         [class.sticky-visible]="shouldShowSticky()"
+         [class.unsupported]="!voiceControl.isSupported()">
       
       <!-- Speech Bubble (Jarvis style) -->
       @if (showSpeechBubble()) {
@@ -37,12 +38,17 @@ import * as THREE from 'three';
 
       <!-- 3D Mini Robot Assistant -->
       <div class="robot-canvas-wrapper" 
-           (click)="voiceControl.toggleListening()"
-           [class.assistant-active]="voiceControl.isListening() || voiceControl.isSpeaking()">
-        <canvas #assistantCanvas class="assistant-canvas"></canvas>
+           (click)="handleAssistantClick()"
+           [class.assistant-active]="voiceControl.isListening() || voiceControl.isSpeaking()"
+           [title]="voiceControl.isSupported() ? 'Click to talk' : 'Voice not supported in this browser'">
+        <canvas #assistantCanvas class="assistant-canvas" [class.hidden]="!voiceControl.isSupported()"></canvas>
         
+        @if (!voiceControl.isSupported()) {
+            <div class="unsupported-icon">🚫</div>
+        }
+
         @if (!voiceControl.isListening() && !voiceControl.isSpeaking()) {
-            <div class="click-hint">AI Assistant Available</div>
+            <div class="click-hint">{{ voiceControl.isSupported() ? 'AI Assistant' : 'Not Supported' }}</div>
         }
       </div>
     </div>
@@ -52,7 +58,7 @@ import * as THREE from 'three';
       position: fixed;
       right: 25px;
       bottom: 25px;
-      z-index: 9999;
+      z-index: 2500;
       display: flex;
       flex-direction: column;
       align-items: flex-end;
@@ -60,7 +66,7 @@ import * as THREE from 'three';
       pointer-events: none;
       opacity: 0;
       transform: translateY(20px);
-      transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+      transition: all 0.6s var(--transition-spring);
 
       &.sticky-visible {
         opacity: 1;
@@ -68,47 +74,52 @@ import * as THREE from 'three';
         pointer-events: auto;
       }
 
-      @media (max-width: 768px) {
-        right: 15px;
-        bottom: 15px;
-        gap: 10px;
-      }
-
       @media (max-width: 480px) {
-        right: 10px;
-        bottom: 10px;
+        right: 15px;
+        bottom: calc(15px + env(safe-area-inset-bottom));
+        gap: 10px;
       }
     }
 
     .robot-canvas-wrapper {
-      width: 80px;
-      height: 80px;
+      width: 70px;
+      height: 70px;
       cursor: pointer;
       pointer-events: auto;
       position: relative;
-      background: var(--bg-glass);
-      backdrop-filter: blur(10px);
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(25px);
+      -webkit-backdrop-filter: blur(25px);
       border-radius: 50%;
-      border: 1px solid var(--border-color);
-      transition: all 0.3s ease;
-      box-shadow: var(--shadow-md);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: all 0.4s var(--transition-spring);
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      &::after {
+        content: '';
+        position: absolute;
+        inset: -2px;
+        background: conic-gradient(from 0deg, var(--accent-primary), var(--accent-secondary), var(--accent-tertiary), var(--accent-primary));
+        z-index: -1;
+        border-radius: inherit;
+        opacity: 0.3;
+        animation: rotateGlow 4s linear infinite;
+        filter: blur(10px);
+      }
 
       &:hover {
         transform: scale(1.1);
         border-color: var(--accent-primary);
-        box-shadow: 0 0 20px var(--accent-glow);
-
-        .click-hint { opacity: 1; }
+        box-shadow: 0 15px 50px var(--accent-glow);
       }
 
       &.assistant-active {
         border-color: var(--accent-secondary);
-        box-shadow: 0 0 25px var(--accent-glow);
-      }
-
-      @media (max-width: 768px) {
-        width: 65px;
-        height: 65px;
+        box-shadow: 0 0 40px var(--accent-glow);
+        transform: scale(1.05);
       }
 
       @media (max-width: 480px) {
@@ -117,59 +128,77 @@ import * as THREE from 'three';
       }
     }
 
+    @keyframes rotateGlow {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+
     .assistant-canvas {
       width: 100% !important;
       height: 100% !important;
       display: block;
+      &.hidden { display: none; }
+    }
+
+    .unsupported-icon {
+        font-size: 1.5rem;
+        opacity: 0.5;
     }
 
     .click-hint {
         position: absolute;
-        top: -35px;
+        top: 50%;
         left: 50%;
-        transform: translateX(-50%);
-        font-size: 0.65rem;
-        background: var(--accent-primary);
-        color: #fff;
-        padding: 4px 10px;
-        border-radius: 12px;
-        opacity: 0.9;
+        transform: translate(-50%, -50%) scale(0.9);
+        font-size: 0.8rem;
+        color: var(--text-primary);
+        opacity: 0;
         white-space: nowrap;
         pointer-events: none;
-        box-shadow: 0 4px 10px var(--accent-glow);
-        animation: hintPulse 2s infinite ease-in-out;
-        font-weight: 600;
-        letter-spacing: 0.5px;
-    }
-
-    @keyframes hintPulse {
-        0%, 100% { transform: translateX(-50%) translateY(0); opacity: 0.8; }
-        50% { transform: translateX(-50%) translateY(-5px); opacity: 1; }
+        transition: all 0.3s ease;
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        z-index: 5;
     }
 
     .transcript-bubble {
       background: var(--bg-glass);
       backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
       border: 1px solid var(--bg-glass-border);
-      padding: 12px 18px;
-      border-radius: 18px;
-      max-width: 280px;
+      padding: 14px 20px;
+      border-radius: 20px;
+      max-width: 300px;
       box-shadow: var(--shadow-lg);
       margin-right: 15px;
       position: relative;
       pointer-events: auto;
 
+      @media (max-width: 480px) {
+          max-width: 280px;
+          padding: 8px 16px;
+          margin-right: 0;
+          text-align: center;
+          border-radius: 15px;
+      }
+
       &.is-speaking {
           border-color: var(--accent-primary);
-          box-shadow: 0 0 15px var(--accent-glow);
+          box-shadow: 0 0 20px var(--accent-glow);
       }
 
       .bubble-content {
         color: var(--text-primary);
-        font-size: 0.9rem;
+        font-size: 0.95rem;
         line-height: 1.4;
         font-weight: 500;
         text-align: right;
+
+        @media (max-width: 480px) {
+            font-size: 0.8rem;
+            text-align: center;
+        }
       }
 
       .bubble-arrow {
@@ -182,6 +211,10 @@ import * as THREE from 'three';
         background: var(--bg-glass);
         border-right: 1px solid var(--bg-glass-border);
         border-top: 1px solid var(--bg-glass-border);
+
+        @media (max-width: 480px) {
+            display: none; 
+        }
       }
     }
     `]
@@ -292,6 +325,14 @@ export class VoiceAssistantComponent implements OnInit, AfterViewInit, OnDestroy
 
     shouldShowSticky(): boolean {
         return !this.voiceControl.isHeroVisible() || this.isScrolledDown();
+    }
+
+    handleAssistantClick() {
+        if (!this.voiceControl.isSupported()) {
+            alert("Voice recognition is not supported in this browser. Please use Chrome or Safari.");
+            return;
+        }
+        this.voiceControl.toggleListening();
     }
 
     private initThreeJS() {

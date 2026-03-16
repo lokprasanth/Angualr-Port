@@ -13,6 +13,12 @@
         justify-content: space-between;
         align-items: center;
         margin-bottom: 24px;
+
+        @media (max-width: 480px) {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 16px;
+        }
     }
 
     .back-pill {
@@ -44,7 +50,7 @@
     }
 
     .section-title {
-        font-size: clamp(2.5rem, 8vw, 4rem);
+        font-size: clamp(2.2rem, 8vw, 4rem);
         font-weight: 800;
         margin-bottom: 16px;
         line-height: 1.1;
@@ -53,9 +59,13 @@
     }
 
     .section-subtitle {
-        font-size: 1.2rem;
+        font-size: 1.1rem;
         color: var(--text-secondary);
         max-width: 600px;
+
+        @media (max-width: 480px) {
+            font-size: 1rem;
+        }
     }
 }
 
@@ -86,6 +96,10 @@
         background: radial-gradient(circle at center, var(--accent-glow) 0%, transparent 70%);
         box-shadow: none;
         border: none;
+
+        @media (max-width: 480px) {
+            height: 300px;
+        }
 
         .globe-canvas {
             width: 100%;

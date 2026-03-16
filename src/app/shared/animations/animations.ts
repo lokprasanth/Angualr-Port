@@ -65,6 +65,16 @@ export const slideInOut = trigger('slideInOut', [
     ])
 ]);
 
+export const popIn = trigger('popIn', [
+    transition(':enter', [
+        style({ transform: 'translate(-50%, -40%) scale(0.9)', opacity: 0 }),
+        animate('0.5s cubic-bezier(0.34, 1.56, 0.64, 1)', style({ transform: 'translate(-50%, -50%) scale(1)', opacity: 1 }))
+    ]),
+    transition(':leave', [
+        animate('0.3s ease-in', style({ transform: 'translate(-50%, -40%) scale(0.9)', opacity: 0 }))
+    ])
+]);
+
 export const routeAnimation = trigger('routeAnimation', [
     transition('* <=> *', [
         query(':enter, :leave', [

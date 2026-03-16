@@ -18,6 +18,18 @@
     border: 1px solid var(--border-color);
     border-radius: 40px;
     gap: 4px;
+    overflow-x: auto;
+    max-width: 100%;
+    scrollbar-width: none; // Firefox
+    
+    &::-webkit-scrollbar {
+        display: none; // Chrome/Safari
+    }
+
+    @media (max-width: 480px) {
+        border-radius: 20px;
+        padding: 4px;
+    }
 }
 
 .filter-tab {
@@ -29,6 +41,7 @@
     color: var(--text-muted);
     transition: all var(--transition-fast);
     z-index: 1;
+    white-space: nowrap; // Keep tabs on one line
 
     &:hover {
         color: var(--text-primary);
@@ -45,6 +58,11 @@
         border-radius: inherit;
         z-index: -1;
         box-shadow: 0 4px 15px var(--accent-glow);
+    }
+
+    @media (max-width: 480px) {
+        padding: 8px 16px;
+        font-size: 0.8rem;
     }
 }
 
@@ -110,6 +128,10 @@
         justify-content: center;
         transition: all var(--transition-smooth);
 
+        @media (max-width: 480px) {
+            height: 200px;
+        }
+
         .project-tag {
             position: absolute;
             top: 20px;
@@ -124,6 +146,13 @@
             text-transform: uppercase;
             letter-spacing: 1px;
             z-index: 2;
+
+            @media (max-width: 480px) {
+                top: 10px;
+                left: 10px;
+                font-size: 0.6rem;
+                padding: 4px 10px;
+            }
         }
 
         .project-img {

@@ -195,31 +195,52 @@ export class VoiceControlService {
             };
 
             this.recognition.onerror = (event: any) => {
+                console.warn('Speech recognition error:', event.error);
+                
                 if (event.error === 'not-allowed') {
                     this.isListening.set(false);
+                    this.transcript.set('Permission denied. Please enable microphone.');
+                } else if (event.error === 'network') {
+                    this.transcript.set('Network error. Check your connection.');
+                } else if (event.error === 'no-speech') {
+                    // This is common, just restart quietly
                 }
-                this.restartRecognition();
+                
+                // Don't auto-restart on critical permission errors
+                if (event.error !== 'not-allowed' && event.error !== 'service-not-allowed') {
+                    this.restartRecognition();
+                } else {
+                    this.isListening.set(false);
+                }
             };
             
             this.recognition.onend = () => {
-                this.restartRecognition();
+                if (this.isListening() && !this.isSpeaking()) {
+                    this.restartRecognition();
+                }
             };
+        } else {
+            this.isSupported.set(false);
+            console.warn('Speech Recognition API not found in this browser.');
         }
     }
 
     private restartRecognition() {
-        // Only restart if we intended to be listening and we aren't currently speaking
+        if (!isPlatformBrowser(this.platformId) || !this.recognition) return;
+        
         if (this.isListening() && !this.isSpeaking()) {
             clearTimeout(this.restartTimeout);
             this.restartTimeout = setTimeout(() => {
                 try { 
-                    // Set language again to be safe
-                    this.recognition.lang = this.currentLang();
-                    this.recognition.start(); 
-                } catch (e) {
-                    // Start might fail if already active, which is fine
-                }
-            }, 400); // Slightly longer delay for stability
+                    this.recognition.abort(); // Ensure it's fully stopped before starting
+                    setTimeout(() => {
+                        try {
+                            this.recognition.lang = this.currentLang();
+                            this.recognition.start();
+                        } catch (e) {}
+                    }, 100);
+                } catch (e) {}
+            }, 600);
         }
     }
 

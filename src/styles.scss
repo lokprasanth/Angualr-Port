@@ -17,11 +17,14 @@
   --text-muted: #627566;
 
   --accent-primary: #5fa879; // Soft phosphor green
+  --accent-primary-rgb: 95, 168, 121;
   --accent-secondary: #a88b5f; // Soft amber
+  --accent-secondary-rgb: 168, 139, 95;
   --accent-tertiary: #5f8ba8; // Soft muted blue
+  --accent-tertiary-rgb: 95, 139, 168;
   --accent-gradient: var(--accent-primary);
   --accent-gradient-text: var(--text-primary);
-  --accent-glow: rgba(95, 168, 121, 0.15);
+  --accent-glow: rgba(var(--accent-primary-rgb), 0.15);
 
   --border-color: rgba(163, 198, 178, 0.08);
   --border-hover: rgba(95, 168, 121, 0.3);

@@ -22,8 +22,13 @@
     gap: 48px;
     align-items: start;
 
+    @media (max-width: 968px) {
+        gap: 32px;
+    }
+
     @media (max-width: 768px) {
         grid-template-columns: 1fr;
+        text-align: center;
     }
 }
 
@@ -54,9 +59,11 @@
     }
 
     h1 {
-        font-size: 2.2rem;
+        font-size: clamp(1.8rem, 5vw, 2.8rem);
         margin: 12px 0 16px;
         color: var(--text-primary);
+        font-weight: 800;
+        line-height: 1.2;
     }
 
     .detail-desc {
@@ -80,14 +87,25 @@
     font-size: 0.8rem;
     font-family: var(--font-mono);
     color: var(--accent-secondary);
-    background: rgba(0, 212, 170, 0.08);
-    border: 1px solid rgba(0, 212, 170, 0.15);
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
 }
 
 .detail-actions {
     display: flex;
     gap: 12px;
     flex-wrap: wrap;
+
+    @media (max-width: 768px) {
+        justify-content: center;
+    }
+
+    @media (max-width: 480px) {
+        .btn {
+            width: 100%;
+            justify-content: center;
+        }
+    }
 }
 
 .not-found {

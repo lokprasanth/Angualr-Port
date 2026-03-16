@@ -102,9 +102,18 @@ export class HeroComponent implements OnInit, AfterViewInit, OnDestroy {
     private updateThemeColors(isDark: boolean): void {
         if (!this.scene) return;
 
-        const accent1 = isDark ? 0x5fa879 : 0x2d8a4e;
-        const accent2 = isDark ? 0xa88b5f : 0xb58900;
-        const accent3 = isDark ? 0x5f8ba8 : 0x2e5e8a;
+        // Vibrant "Pop" Palette for Light Mode
+        const accent1 = isDark ? 0x5fa879 : 0x339af0; // Electric Blue
+        const accent2 = isDark ? 0xa88b5f : 0xff00ff; // Vivid Magenta
+        const accent3 = isDark ? 0x5f8ba8 : 0x7950f2; // Bright Indigo
+
+        if (this.materials['body']) {
+            this.materials['body'].color.setHex(isDark ? 0xffffff : 0xffffff);
+            this.materials['body'].metalness = isDark ? 0.6 : 0.4;
+            this.materials['body'].roughness = isDark ? 0.4 : 0.1; // More glossy in light mode
+            this.materials['body'].emissive.setHex(isDark ? 0x121413 : 0xdedede);
+            this.materials['body'].emissiveIntensity = isDark ? 0.2 : 0.1;
+        }
 
         if (this.materials['glow']) {
             this.materials['glow'].color.setHex(accent1);
@@ -126,8 +135,20 @@ export class HeroComponent implements OnInit, AfterViewInit, OnDestroy {
         });
 
         if (this.lights['rim']) this.lights['rim'].color.setHex(accent2);
-        if (this.lights['bottom']) this.lights['bottom'].color.setHex(accent1);
-        if (this.lights['ambient']) (this.lights['ambient'] as THREE.AmbientLight).intensity = isDark ? 0.4 : 1.0;
+        if (this.lights['bottom']) this.lights['bottom'].color.setHex(accent3);
+        if (this.lights['ambient']) (this.lights['ambient'] as THREE.AmbientLight).intensity = isDark ? 0.4 : 1.5;
+        if (this.lights['ambient']) (this.lights['ambient'] as THREE.AmbientLight).color.setHex(isDark ? 0x222724 : 0xffffff);
+
+        if (this.materials['platform']) {
+            this.materials['platform'].color.setHex(isDark ? 0x121413 : 0xced4da);
+            this.materials['platform'].emissive.setHex(accent1);
+            this.materials['platform'].emissiveIntensity = isDark ? 0.1 : 0.3;
+        }
+        if (this.materials['platformGlow']) {
+            this.materials['platformGlow'].color.setHex(accent1);
+            this.materials['platformGlow'].emissive.setHex(accent1);
+            this.materials['platformGlow'].emissiveIntensity = isDark ? 1.0 : 2.0;
+        }
 
         if (this.particles) {
             const mat = this.particles.material as THREE.PointsMaterial;
@@ -304,17 +325,18 @@ export class HeroComponent implements OnInit, AfterViewInit, OnDestroy {
         // Materials
         const isDark = this.themeService.isDark();
         const bodyMat = new THREE.MeshStandardMaterial({
-            color: 0xffffff,
+            color: isDark ? 0xffffff : 0xced4da,
             metalness: 0.6,
             roughness: 0.4,
-            emissive: 0x121413,
-            emissiveIntensity: 0.2
+            emissive: isDark ? 0x121413 : 0x343a40,
+            emissiveIntensity: isDark ? 0.2 : 0.05
         });
+        this.materials['body'] = bodyMat;
 
         const glowMat = new THREE.MeshStandardMaterial({
-            color: isDark ? 0x5fa879 : 0x2d8a4e,
-            emissive: isDark ? 0x5fa879 : 0x2d8a4e,
-            emissiveIntensity: 1.2,
+            color: isDark ? 0x5fa879 : 0x339af0,
+            emissive: isDark ? 0x5fa879 : 0x339af0,
+            emissiveIntensity: isDark ? 1.2 : 2.0,
             metalness: 0.8,
             roughness: 0.2
         });
@@ -329,9 +351,9 @@ export class HeroComponent implements OnInit, AfterViewInit, OnDestroy {
         });
 
         const accentMat = new THREE.MeshStandardMaterial({
-            color: isDark ? 0xa88b5f : 0xb58900,
-            emissive: isDark ? 0xa88b5f : 0xb58900,
-            emissiveIntensity: 0.8,
+            color: isDark ? 0xa88b5f : 0xff00ff,
+            emissive: isDark ? 0xa88b5f : 0xff00ff,
+            emissiveIntensity: 1.0,
             metalness: 0.5,
             roughness: 0.5
         });
@@ -486,8 +508,8 @@ export class HeroComponent implements OnInit, AfterViewInit, OnDestroy {
 
         const flameGeo = new THREE.ConeGeometry(0.15, 0.5, 16);
         const flameMat = new THREE.MeshStandardMaterial({
-            color: isDark ? 0x5fa879 : 0x2d8a4e,
-            emissive: isDark ? 0x5fa879 : 0x2d8a4e,
+            color: isDark ? 0x5fa879 : 0x4dabf7,
+            emissive: isDark ? 0x5fa879 : 0x4dabf7,
             emissiveIntensity: 1.5,
             transparent: true,
             opacity: 0.7
@@ -559,16 +581,18 @@ export class HeroComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     private createPlatform(): void {
+        const isDark = this.themeService.isDark();
         const platformGeo = new THREE.CylinderGeometry(1, 1.1, 0.08, 32);
         const platformMat = new THREE.MeshStandardMaterial({
-            color: 0x121413,
+            color: isDark ? 0x121413 : 0xced4da,
             metalness: 0.8,
             roughness: 0.2,
-            emissive: 0x5fa879,
-            emissiveIntensity: 0.1,
+            emissive: isDark ? 0x5fa879 : 0x339af0,
+            emissiveIntensity: isDark ? 0.1 : 0.3,
             transparent: true,
             opacity: 0.7
         });
+        this.materials['platform'] = platformMat;
         const platform = new THREE.Mesh(platformGeo, platformMat);
         platform.position.y = -0.82;
         platform.receiveShadow = true;
@@ -577,12 +601,13 @@ export class HeroComponent implements OnInit, AfterViewInit, OnDestroy {
         // Platform glow ring
         const glowRing = new THREE.TorusGeometry(1.05, 0.015, 8, 64);
         const glowMat = new THREE.MeshStandardMaterial({
-            color: 0x5fa879,
-            emissive: 0x5fa879,
-            emissiveIntensity: 1,
+            color: isDark ? 0x5fa879 : 0x339af0,
+            emissive: isDark ? 0x5fa879 : 0x339af0,
+            emissiveIntensity: isDark ? 1 : 2,
             transparent: true,
             opacity: 0.5
         });
+        this.materials['platformGlow'] = glowMat;
         const glow = new THREE.Mesh(glowRing, glowMat);
         glow.rotation.x = Math.PI / 2;
         glow.position.y = -0.78;
@@ -747,10 +772,16 @@ export class HeroComponent implements OnInit, AfterViewInit, OnDestroy {
 
         // Eye colors based on state
         if (this.leftEye && this.rightEye) {
+            const isDark = this.themeService.isDark();
             const isListening = this.voiceControl.isListening();
             const isSpeaking = this.voiceControl.isSpeaking();
             
-            const targetColor = isSpeaking ? 0xa88b5f : (isListening ? 0x5fa879 : 0x5f8ba8);
+            // Dynamic theme colors - High Contrast for colorful vibe
+            const listeningColor = isDark ? 0x5fa879 : 0x339af0;
+            const speakingColor = isDark ? 0xa88b5f : 0xff00ff;
+            const idleColor = isDark ? 0x5f8ba8 : 0x7950f2;
+
+            const targetColor = isSpeaking ? speakingColor : (isListening ? listeningColor : idleColor);
             (this.leftEye.material as THREE.MeshStandardMaterial).color.lerp(new THREE.Color(targetColor), 0.1);
             (this.leftEye.material as THREE.MeshStandardMaterial).emissive.lerp(new THREE.Color(targetColor), 0.1);
             (this.rightEye.material as THREE.MeshStandardMaterial).color.lerp(new THREE.Color(targetColor), 0.1);

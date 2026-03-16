@@ -45,15 +45,21 @@
     </div>
 </nav>
 
-<!-- Mobile Menu (Moved outside for viewport-relative fixed positioning) -->
+<!-- Mobile Menu Overlay -->
 @if (isMobileOpen()) {
+<div class="mobile-menu-overlay" (click)="closeMobile()" @fadeIn></div>
 <div class="mobile-menu" @slideInOut>
+    <div class="mobile-menu-header">
+        <span class="mobile-menu-title">Menu</span>
+        <button class="menu-close-btn" (click)="closeMobile()">✕</button>
+    </div>
     <ul class="mobile-links">
         @for (link of navLinks; track link.path) {
         <li>
             <a class="mobile-link" [routerLink]="link.path" routerLinkActive="active"
                 (click)="scrollToSection(link.fragment)">
-                {{ link.label }}
+                <span class="link-label">{{ link.label }}</span>
+                <span class="link-arrow">→</span>
             </a>
         </li>
         }

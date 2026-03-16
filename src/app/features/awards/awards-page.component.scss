@@ -58,20 +58,27 @@
 
     &:hover {
         transform: translateY(-4px) rotateX(2deg);
-        box-shadow: var(--shadow-lg), 0 0 30px rgba(108, 99, 255, 0.1);
+        box-shadow: var(--shadow-lg), 0 0 30px var(--accent-glow);
+        border-color: var(--accent-primary);
     }
 
     @media (max-width: 580px) {
         flex-direction: column;
         text-align: center;
         align-items: center;
+        padding: 24px;
+        gap: 16px;
     }
 }
 
 .ad-icon {
     font-size: 3rem;
     flex-shrink: 0;
-    filter: drop-shadow(0 4px 12px rgba(108, 99, 255, 0.3));
+    filter: drop-shadow(0 4px 12px var(--accent-glow));
+
+    @media (max-width: 580px) {
+        font-size: 2.5rem;
+    }
 }
 
 .ad-body {

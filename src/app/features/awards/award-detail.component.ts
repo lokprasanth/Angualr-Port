@@ -51,11 +51,19 @@ import { fadeInUp } from '../../shared/animations/animations';
       padding: 64px 40px;
       max-width: 700px;
       margin: 0 auto;
+      
+      @media (max-width: 480px) {
+        padding: 40px 24px;
+      }
     }
     .ah-icon {
       font-size: 4rem;
       margin-bottom: 16px;
-      filter: drop-shadow(0 8px 24px rgba(108, 99, 255, 0.3));
+      filter: drop-shadow(0 8px 24px var(--accent-glow));
+
+      @media (max-width: 480px) {
+        font-size: 3rem;
+      }
     }
     .ah-year {
       font-family: var(--font-mono);
@@ -64,12 +72,14 @@ import { fadeInUp } from '../../shared/animations/animations';
       letter-spacing: 2px;
     }
     h1 {
-      font-size: 2rem;
+      font-size: clamp(1.8rem, 5vw, 2.8rem);
       margin: 12px 0;
       color: var(--text-primary);
+      font-weight: 800;
+      line-height: 1.2;
     }
     .ah-org {
-      font-size: 1rem;
+      font-size: 1.1rem;
       color: var(--accent-primary);
       font-weight: 500;
       margin-bottom: 20px;

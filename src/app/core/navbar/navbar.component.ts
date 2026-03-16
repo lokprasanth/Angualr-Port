@@ -2,13 +2,13 @@ import { Component, signal, HostListener, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { ThemeService } from '../../core/services/theme.service';
-import { slideInOut } from '../../shared/animations/animations';
+import { slideInOut, fadeIn } from '../../shared/animations/animations';
 
 @Component({
     selector: 'app-navbar',
     standalone: true,
     imports: [CommonModule, RouterLink, RouterLinkActive],
-    animations: [slideInOut],
+    animations: [slideInOut, fadeIn],
     templateUrl: './navbar.component.html',
     styleUrl: './navbar.component.scss'
 })
