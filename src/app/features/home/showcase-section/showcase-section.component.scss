@@ -337,19 +337,25 @@
 
         @media (max-width: 768px) {
             position: fixed;
-            bottom: 20px;
-            left: 20px;
-            right: 20px;
-            width: auto;
-            max-width: none;
-            transform: translateY(100%);
-            margin: 0;
-            padding: 20px;
-            animation: slideUpMobile 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-            
-            &::before {
-                background: linear-gradient(to right, var(--color), transparent);
-            }
+            top: 50% !important;
+            left: 50% !important;
+            bottom: auto !important;
+            right: auto !important;
+            transform: translate(-50%, -50%) !important;
+            width: calc(100vw - 40px);
+            max-width: 400px;
+            min-width: 0;
+            z-index: 3000; // Above assistant
+            background: var(--bg-glass);
+            backdrop-filter: blur(25px);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 0 60px rgba(0,0,0,0.6);
+            padding: 28px;
+            border-radius: 30px;
+            text-align: center;
+            animation: slideUp 0.43s var(--transition-spring);
+
+            &::before { display: none; } // Hide arrow on mobile
         }
     }
 }

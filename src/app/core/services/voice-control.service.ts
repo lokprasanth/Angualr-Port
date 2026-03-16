@@ -200,6 +200,10 @@ export class VoiceControlService {
                 if (event.error === 'not-allowed') {
                     this.isListening.set(false);
                     this.transcript.set('Permission denied. Please enable microphone.');
+                    // Explicit alert for mobile users to help discovery
+                    if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+                        alert("Microphone access is required for the AI Assistant. Please enable it in your browser settings.");
+                    }
                 } else if (event.error === 'network') {
                     this.transcript.set('Network error. Check your connection.');
                 } else if (event.error === 'no-speech') {

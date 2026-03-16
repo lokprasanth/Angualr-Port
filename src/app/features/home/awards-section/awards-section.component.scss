@@ -21,6 +21,12 @@
     }
 }
 
+.recognition-card.master-block {
+    @media (min-width: 1201px) {
+        grid-column: span 2;
+    }
+}
+
 .recognition-card {
     position: relative;
     padding: 32px;

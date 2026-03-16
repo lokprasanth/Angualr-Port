@@ -70,14 +70,20 @@ import * as THREE from 'three';
 
       &.sticky-visible {
         opacity: 1;
+        visibility: visible;
         transform: translateY(0);
         pointer-events: auto;
       }
 
+      &:not(.sticky-visible) {
+        visibility: hidden;
+      }
+
       @media (max-width: 480px) {
         right: 15px;
-        bottom: calc(15px + env(safe-area-inset-bottom));
-        gap: 10px;
+        bottom: calc(20px + env(safe-area-inset-bottom));
+        gap: 12px;
+        transform: scale(0.9) translateY(0); // Slight scale down for mobile
       }
     }
 
@@ -123,8 +129,8 @@ import * as THREE from 'three';
       }
 
       @media (max-width: 480px) {
-        width: 55px;
-        height: 55px;
+        width: 60px;
+        height: 60px;
       }
     }
 
@@ -138,11 +144,6 @@ import * as THREE from 'three';
       height: 100% !important;
       display: block;
       &.hidden { display: none; }
-    }
-
-    .unsupported-icon {
-        font-size: 1.5rem;
-        opacity: 0.5;
     }
 
     .click-hint {
@@ -160,6 +161,10 @@ import * as THREE from 'three';
         letter-spacing: 1px;
         text-transform: uppercase;
         z-index: 5;
+
+        @media (max-width: 480px) {
+            display: none;
+        }
     }
 
     .transcript-bubble {
@@ -176,11 +181,12 @@ import * as THREE from 'three';
       pointer-events: auto;
 
       @media (max-width: 480px) {
-          max-width: 280px;
-          padding: 8px 16px;
+          max-width: calc(100vw - 40px);
+          padding: 10px 18px;
           margin-right: 0;
           text-align: center;
-          border-radius: 15px;
+          border-radius: 18px;
+          font-size: 0.85rem;
       }
 
       &.is-speaking {

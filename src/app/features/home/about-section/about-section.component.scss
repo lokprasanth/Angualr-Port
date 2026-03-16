@@ -142,14 +142,16 @@
         
         &.main-bio {
             p {
-                font-size: clamp(1rem, 2.5vw, 1.15rem);
+                font-size: clamp(1rem, 4vw, 1.15rem);
                 line-height: 1.8;
                 color: var(--text-secondary);
+                text-align: left;
             }
         }
 
         @media (max-width: 480px) {
             padding: 24px;
+            text-align: left;
         }
     }
 }
