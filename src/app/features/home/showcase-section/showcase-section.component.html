@@ -1,43 +1,60 @@
-<section class="showcase-section section" id="showcase">
+<section class="page-section showcase-explorer" id="showcase">
     <div class="container">
-        <div class="section-header" @fadeInUp>
-            <span class="section-label">Capabilities</span>
-            <h2 class="section-title">Technological <span class="accent-text">Expertise</span></h2>
-            <p class="section-subtitle">Bridging complex requirements with elegant digital architecture</p>
-        </div>
+      <div class="page-header" @fadeInUp>
+        <span class="section-label">Expertise</span>
+        <h1 class="section-title gradient-text">Infinite Skills Orbit</h1>
+        <p class="section-subtitle">Exploring the galaxy of my technical skills</p>
+      </div>
 
-        <div class="expertise-bento">
-            @for (item of items(); track item.id; let i = $index) {
-            <a [routerLink]="['/showcase']" [queryParams]="{ id: item.id }" 
-               class="expertise-block glass-card"
-               [class.large-block]="i === 0 || i === 3"
-               @fadeInUp>
-                
-                <div class="block-visual">
-                    <div class="icon-orb" [style.color]="item.color">
-                        <span class="orb-icon">{{ item.icon }}</span>
-                        <div class="orb-glow" [style.background]="item.color"></div>
-                    </div>
-                    <!-- Decorative scanning line for block -->
-                    <div class="block-scanner"></div>
+      <div class="orbit-container" 
+           #orbitContainer 
+           (mousedown)="onMouseDown($event)"
+           (touchstart)="onTouchStart($event)"
+           [class.dragging]="isDragging">
+           
+        <!-- Orbit Background Path -->
+        <div class="orbit-path"></div>
+        
+        <!-- Skill Nodes -->
+        @for (item of items(); track item.id; let i = $index) {
+          <div class="skill-node" 
+               [class.active]="selectedItem()?.id === item.id"
+               [style.--index]="i"
+               [style.--total]="items().length"
+               [style.--color]="item.color"
+               (click)="selectItem(item)">
+            
+            <div class="node-wrapper">
+              <div class="node-content">
+                <div class="node-icon">{{ item.icon }}</div>
+              </div>
+              <div class="node-label">{{ item.title }}</div>
+            </div>
+
+            <!-- Tooltip / Mini-Card -->
+            @if (selectedItem()?.id === item.id) {
+              <div class="node-info" @fadeInUp>
+                <h3>{{ item.title }}</h3>
+                <p>{{ item.description }}</p>
+                <div class="skill-tags">
+                  @for (tag of getTags(item); track tag) {
+                    <span class="tag">{{ tag }}</span>
+                  }
                 </div>
-
-                <div class="block-content">
-                    <div class="block-meta">
-                        <h3 class="block-title">{{ item.title }}</h3>
-                        <div class="block-indicator" [style.background]="item.color"></div>
-                    </div>
-                    <p class="block-desc">{{ item.description }}</p>
-                    
-                    <div class="block-footer">
-                        <span class="view-tag">View Expertise →</span>
-                    </div>
-                </div>
-
-                <!-- Abstract decorative elements -->
-                <div class="block-bg-deco"></div>
-            </a>
+              </div>
             }
+          </div>
+        }
+
+        <!-- Center Core (Expertise Logo) -->
+        <div class="orbit-center">
+          <div class="orbiting-ring"></div>
+          <div class="core-sphere"></div>
         </div>
+      </div>
+
+      <div class="interaction-hint">
+        <span class="hint-icon">🖱️</span> Drag to rotate • Click nodes to explore
+      </div>
     </div>
 </section>

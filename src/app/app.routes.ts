@@ -17,11 +17,6 @@ export const routes: Routes = [
         data: { animation: 'about' }
     },
     {
-        path: 'showcase',
-        loadComponent: () => import('./features/showcase/showcase-page.component').then(m => m.ShowcasePageComponent),
-        data: { animation: 'showcase' }
-    },
-    {
         path: 'projects',
         loadComponent: () => import('./features/projects/projects-page.component').then(m => m.ProjectsPageComponent),
         data: { animation: 'projects' }

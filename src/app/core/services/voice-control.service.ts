@@ -10,96 +10,182 @@ export class VoiceControlService {
     private platformId = inject(PLATFORM_ID);
 
     private recognition: any;
-    private synthesis = window.speechSynthesis;
+    private synthesis = (typeof window !== 'undefined') ? window.speechSynthesis : null;
 
+    // Signals
     isSpeaking = signal(false);
     isListening = signal(false);
     transcript = signal('');
     isSupported = signal(false);
     isHeroVisible = signal(false);
     lastResponse = signal('');
+    
+    // Detection & State
+    currentLang = signal('en-US');
     private hasWelcomed = false;
     private isProcessing = false;
     private lastCommand = '';
     private lastCommandTime = 0;
+    private restartTimeout: any;
 
-    // Semantic Concept Mapping (Concept-Based)
-    private concepts: Record<string, string[]> = {
-        home: ['home', 'start', 'main', 'intro', 'hero'],
-        about: ['about', 'experience', 'background', 'who are you', 'profile', 'information', 'bio', 'identity'],
-        projects: ['project', 'projects', 'work', 'works', 'portfolio', 'build', 'builds', 'creations', 'case studies'],
-        awards: ['award', 'awards', 'achievements', 'recognition', 'honors', 'trophy'],
-        showcase: ['showcase', 'skills', 'expertise', 'services', 'tools'],
-        contact: ['contact', 'reach', 'email', 'message', 'connect', 'touch', 'hire']
+    // ─── Modern & General Dictionary ──────────────────────────
+    private dictionary: Record<string, Record<string, string[]>> = {
+        'en-US': {
+            home: ['home', 'start', 'main', 'landing', 'back to start'],
+            about: ['about', 'bio', 'who', 'story', 'resume', 'cv', 'experience'],
+            projects: ['projects', 'work', 'apps', 'portfolio', 'stuff'],
+            awards: ['awards', 'prizes', 'won', 'achievements', 'medals'],
+            showcase: ['showcase', 'skills', 'tech', 'stack', 'expertise', 'demonstration'],
+            contact: ['contact', 'hire', 'email', 'message', 'call', 'reach'],
+            dark: ['dark', 'night', 'black', 'dark mode'],
+            light: ['light', 'day', 'white', 'bright'],
+            scroll_up: ['scroll up', 'go up', 'move up', 'page up'],
+            scroll_down: ['scroll down', 'go down', 'move down', 'page down', 'scroll'],
+            smalltalk: ['hi', 'hello', 'hey', 'how are you', 'who are you', 'joke']
+        },
+        'te-IN': {
+            home: ['హోమ్', 'మొదలు', 'ఇల్లు', 'ప్రారంభం'],
+            about: ['గురించి', 'నేను', 'పరిచయం', 'బయో', 'రెజ్యూమ్'],
+            projects: ['ప్రాజెక్టులు', 'పని', 'చేసినవి'],
+            awards: ['అవార్డులు', 'గెలుచుకున్నవి', 'బహుమతులు'],
+            showcase: ['షోకేస్', 'నైపుణ్యాలు', 'టెక్నాలజీ', 'తెలిసినవి'],
+            contact: ['కాంటాక్ట్', 'మెసేజ్', 'ఈమెయిల్', 'ఫోన్'],
+            dark: ['డార్క్', 'నలుపు', 'చీకటి'],
+            light: ['లైట్', 'తెలుపు', 'వెలుగు'],
+            scroll_up: ['పైకి', 'పైకి స్క్రోల్'],
+            scroll_down: ['కిందకు', 'స్క్రోల్', 'కిందకు స్క్రోల్'],
+            smalltalk: ['హలో', 'నమస్కారం', 'బాగున్నారా', 'ఎవరు మీరు']
+        },
+        'hi-IN': {
+            home: ['होम', 'शुरुआत', 'घर', 'स्टार्ट'],
+            about: ['बारे में', 'परिचय', 'बायोडेटा', 'कहानी'],
+            projects: ['प्रोजेक्ट्स', 'काम', 'पोर्टफोलियो'],
+            awards: ['पुरस्कार', 'इनाम', 'जीता'],
+            showcase: ['शोकेस', 'कौशल', 'हुनर', 'टेक्नोलॉजी'],
+            contact: ['संपर्क', 'मैसेज', 'ईमेल', 'नमस्ते'],
+            dark: ['डार्क', 'काला', 'रात'],
+            light: ['लाइट', 'सफेद', 'उजाला'],
+            scroll_up: ['ऊपर', 'पेज ऊपर'],
+            scroll_down: ['नीचे', 'स्क्रोल', 'नीचे स्क्रोल'],
+            smalltalk: ['नमस्ते', 'हैलो', 'कैसे हो', 'कौन हो']
+        }
     };
 
-    private actionVerbs = ['open', 'go', 'take', 'show', 'check', 'see', 'visit', 'look', 'navigate', 'scroll'];
-
-    // Randomized Natural Responses (Improve Natural Behavior)
-    private responses: Record<string, string[]> = {
-        welcome: [
-            "Welcome to Lok's portfolio! I'm your AI guide. Would you like to see my latest projects, learn more about my background, or see what technologies I use?",
-            "Hi there! I'm here to show you around Lok's work. Shall we start with my featured projects?",
-            "Greetings! I can guide you through my skills, awards, or directly to my contact section. What would you like to see first?"
-        ],
-        projects: [
-            "I've built some exciting things. Here are my main projects.",
-            "Take a look at my work. I specialize in modern web technologies.",
-            "Showing you my portfolio. Each project represents a unique challenge I've solved."
-        ],
-        about: [
-            "Here's my story and background as a developer.",
-            "I'm passionate about building things. Let me show you my profile.",
-            "This section covers my experience and what drives my creative process."
-        ],
-        navigate_generic: [
-            "Of course. Let me take you to the ${page} section.",
-            "Smoothly moving to the ${page}. Hope you find it interesting!",
-            "Heading over to see ${page} now."
-        ],
-        scroll: ["Scrolling down to show you more of my work.", "Moving the page so you can see everything.", "Follow me, I'll show you more."],
-        confused: [
-            "I didn't quite catch that, but I'd love to show you around! You can say 'Show projects', 'Tell me about yourself', or 'How can I contact you?'",
-            "I'm still learning the ropes, but I can definitely take you to my projects or skills. Which would you prefer?",
-            "Oops, sorry! Try asking me to 'Go to awards' or 'Visit the contact page'."
-        ],
-        top: ["Returning to the start!", "Heading back to the top section."],
-        start: ["Assistant online. I'm ready to show you my portfolio!", "Systems ready. What part of my work would you like to explore?", "Listening and ready to guide you through my creations."],
-        stop: ["Going offline. Thanks for visiting my portfolio!", "Goodbye! Feel free to explore more on your own.", "Assistant standing down. Have a wonderful time looking around!"]
+    private personas: Record<string, any> = {
+        'en-US': {
+            welcome: ["Hi! I'm Lok's AI assistant. Want to see some projects or just look around?", "Hello! I can help you find things here. What are you looking for?"],
+            start: ["Listening! Tell me what to do.", "Ready! Where to?"],
+            stop: ["Bye! Have a great day.", "See you later! Enjoy the site."],
+            confused: ["Sorry, I didn't get that. Say it again?", "Not sure what you mean. Try 'projects' or 'about'."],
+            dark: ["Switching to dark mode. Better for eyes!", "Okay, dark mode is on."],
+            light: ["Switching to light mode. Nice and bright!", "Done! Light mode active."],
+            already: ["We are already right here!", "You are already looking at it!"],
+            projects: ["Sure! Here are the projects Lok worked on.", "Let's check out the work. Here you go."],
+            about: ["Of course! Here is Lok's story.", "Changing to the about section now."],
+            showcase: ["Here is the skills showcase. This is what Lok can do!", "Moving to the showcase section to see some cool tech."],
+            awards: ["Checking out the awards! Here is the list.", "Moving to the achievements section."],
+            contact: ["Sure! Here is how you can connect with Lok.", "Taking you to the contact section now."],
+            scroll_up: ["Scrolling up for you.", "Heading back up."],
+            scroll_down: ["Moving down the page.", "Scrolling down."],
+            how_are_you: ["I'm doing great, thanks for asking! How can I help you?", "I'm good! Hope you are having a nice day."],
+            who_are_you: ["I'm an AI assistant. I can navigate the site and answer questions for you.", "Think of me as your guide for this portfolio."],
+            joke: ["Why do birds fly south? Because it's too far to walk! Haha.", "What do you call a fake noodle? An impasta! Haha."]
+        },
+        'te-IN': {
+            welcome: ["హలో! లోక్ పోర్ట్‌ఫోలియోకి స్వాగతం. నేను మీకు ఎలా సహాయం చేయగలను?", "నమస్కారం! నేను మీ అసిస్టెంట్‌ని."],
+            start: ["చెప్పండి, నేను వింటున్నాను.", "సిద్ధం! ఎక్కడికి వెళ్దాం?"],
+            projects: ["ఖచ్చితంగా! ఇక్కడ అన్ని ప్రాజెక్టులు ఉన్నాయి.", "ప్రాజెక్టుల విభాగానికి వెళ్తున్నాం."],
+            about: ["సరే, పరిచయ విభాగానికి తీసుకెళ్తున్నాను.", "లోక్ గురించి ఇక్కడ తెలుసుకోవచ్చు."],
+            showcase: ["షోకేస్ విభాగానికి వెళ్తున్నాం. ఇక్కడ నైపుణ్యాలు చూడవచ్చు.", "ఇదిగోండి షోకేస్!"],
+            awards: ["అవార్డులు ఇక్కడ చూడవచ్చు.", "గెలిచిన బహుమతులు ఇక్కడ ఉన్నాయి."],
+            contact: ["తప్పకుండా! కాంటాక్ట్ సెక్షన్ కి వెళ్తున్నాం.", "నన్ను ఇక్కడ సంప్రదించవచ్చు."],
+            dark: ["సరే, డార్క్ మోడ్ కి మారుస్తున్నాను."],
+            light: ["లైట్ మోడ్ కి మార్చాను."],
+            scroll_up: ["పైకి స్క్రోల్ చేస్తున్నాను."],
+            scroll_down: ["కిందకు స్క్రోల్ చేస్తున్నాను."],
+            confused: ["క్షమించండి, అర్థం కాలేదు. మళ్ళీ చెబుతారా?"],
+            already: ["మనం ఇప్పటికే ఇక్కడే ఉన్నాం!"],
+            how_are_you: ["నేను చాలా బాగున్నాను! మీరు ఎలా ఉన్నారు?"],
+            who_are_you: ["నేను ఒక AI అసిస్టెంట్‌ని."],
+            joke: ["ఒక జోక్ చెప్పనా? కాకికి ఇంగ్లీష్ లో ఏమంటారు? బ్లాక్ బర్డ్! హాహా."]
+        },
+        'hi-IN': {
+            welcome: ["नमस्ते! मैं लोक का AI असिस्टेंट हूं। बताइए, क्या देखना चाहेंगे?"],
+            start: ["जी, मैं सुन रहा हूं।", "बताइए, कहां चलना है?"],
+            projects: ["बिल्कुल! ये रहे वो सारे प्रोजेक्ट्स जो लोक ने बनाए हैं."],
+            about: ["जी, लोक के परिचय वाले भाग में चलते हैं।"],
+            showcase: ["शोक़ेस भाग में चलते हैं। यहाँ हुनर देखिये।", "ये रहा शोक़ेस!"],
+            awards: ["इनाम और पुरस्कार यहां देखिये।"],
+            contact: ["जरूर! संपर्क करने के लिए यहां देखिये।"],
+            dark: ["डार्क मोड ऑन कर दिया है।"],
+            light: ["लाइट मोड ऑन कर दिया।"],
+            scroll_up: ["ऊपर की ओर बढ़ रहे हैं।"],
+            scroll_down: ["नीचे स्क्रोल कर रहा हूं।"],
+            confused: ["माफी चाहता हूं, समझ नहीं आया।"],
+            already: ["हम पहले से ही यहीं पर हैं!"],
+            how_are_you: ["मैं बहुत अच्छा हूं! आप कैसे हैं?"],
+            who_are_you: ["मैं एक AI असिस्टेंट हूं।"],
+            joke: ["चुटकुला सुनेंगे? हाथी और चींटी की दोस्ती हो गई! हाहा।"]
+        }
     };
 
     constructor() {
         if (isPlatformBrowser(this.platformId)) {
             this.initRecognition();
-            // Session Guard (Requirement 3)
             const played = sessionStorage.getItem('aiWelcomePlayed');
             this.hasWelcomed = played === 'true';
+
+            // Ensure voices are loaded for synthesis
+            if (this.synthesis) {
+                if (this.synthesis.onvoiceschanged !== undefined) {
+                    this.synthesis.onvoiceschanged = () => this.synthesis?.getVoices();
+                }
+                this.synthesis.getVoices(); // Trigger initial load
+            }
         }
     }
 
     private initRecognition() {
+        if (!isPlatformBrowser(this.platformId)) return;
         const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-
         if (SpeechRecognition) {
             this.isSupported.set(true);
             this.recognition = new SpeechRecognition();
             this.recognition.continuous = true;
             this.recognition.interimResults = true;
-            this.recognition.lang = 'en-US';
+            this.recognition.lang = this.currentLang();
+
+            this.recognition.onstart = () => {
+                this.isListening.set(true);
+                this.isProcessing = false; // Reset on start to ensure we aren't locked
+            };
 
             this.recognition.onresult = (event: any) => {
-                // QUICK ATTENTION: Do not process anything if synthesis is active (Requirement 1)
-                if (this.isSpeaking() || this.synthesis.speaking) return;
+                // If we are currently speaking, ignore any microphone input to prevent self-triggering
+                if (this.isSpeaking()) return;
 
-                const current = event.resultIndex;
-                const result = event.results[current];
-                const text = result[0].transcript.toLowerCase();
+                let finalTranscript = '';
+                let interimTranscript = '';
 
-                this.transcript.set(text);
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) {
+                        finalTranscript += event.results[i][0].transcript;
+                    } else {
+                        interimTranscript += event.results[i][0].transcript;
+                    }
+                }
 
-                if (result.isFinal) {
+                if (interimTranscript) {
+                    this.transcript.set(interimTranscript);
+                    this.detectLanguage(interimTranscript);
+                }
+
+                if (finalTranscript) {
+                    const text = finalTranscript.toLowerCase().trim();
+                    this.transcript.set(text);
+                    
+                    // Prevent duplicate commands firing in rapid succession
                     const now = Date.now();
-                    // Prevent processing the same command within 1.5 seconds (Repetition Guard)
                     if (text === this.lastCommand && now - this.lastCommandTime < 1500) return;
                     
                     this.lastCommand = text;
@@ -108,39 +194,70 @@ export class VoiceControlService {
                 }
             };
 
-            this.recognition.onend = () => {
-                // RESTART ONLY IF LINES COMPLETED (Requirement 1)
-                if (this.isListening() && !this.isSpeaking() && !this.synthesis.speaking) {
-                    try { this.recognition.start(); } catch (e) { }
+            this.recognition.onerror = (event: any) => {
+                if (event.error === 'not-allowed') {
+                    this.isListening.set(false);
                 }
+                this.restartRecognition();
             };
+            
+            this.recognition.onend = () => {
+                this.restartRecognition();
+            };
+        }
+    }
+
+    private restartRecognition() {
+        // Only restart if we intended to be listening and we aren't currently speaking
+        if (this.isListening() && !this.isSpeaking()) {
+            clearTimeout(this.restartTimeout);
+            this.restartTimeout = setTimeout(() => {
+                try { 
+                    // Set language again to be safe
+                    this.recognition.lang = this.currentLang();
+                    this.recognition.start(); 
+                } catch (e) {
+                    // Start might fail if already active, which is fine
+                }
+            }, 400); // Slightly longer delay for stability
+        }
+    }
+
+    private detectLanguage(text: string) {
+        const isTelugu = /[\u0C00-\u0C7F]/.test(text);
+        const isHindi = /[\u0900-\u097F]/.test(text);
+        let newLang = 'en-US';
+        if (isTelugu) newLang = 'te-IN';
+        else if (isHindi) newLang = 'hi-IN';
+        if (newLang !== this.currentLang()) {
+            this.currentLang.set(newLang);
+            if (this.recognition) this.recognition.lang = newLang;
         }
     }
 
     toggleListening() {
         if (!this.isSupported()) return;
-        this.isListening() ? this.stop() : this.start();
+        if (this.isListening()) {
+            this.isListening.set(false);
+            this.speak(this.getPersonaRes('stop'));
+            try { this.recognition.stop(); } catch (e) {}
+        } else {
+            this.start();
+        }
     }
 
     private start() {
         this.isListening.set(true);
-        this.transcript.set('Listening...');
+        this.transcript.set('Ready...');
         try {
             this.recognition.start();
-            // Human-like greeting
-            const greeting = !this.hasWelcomed 
-                ? this.getRandomResponse('welcome') 
-                : this.getRandomResponse('start');
-            this.speak(greeting);
-            this.setWelcomePlayed();
-        } catch (e) { }
-    }
-
-    private stop() {
-        this.speak(this.getRandomResponse('stop'));
-        this.isListening.set(false);
-        try { this.recognition.stop(); } catch (e) { }
-        this.transcript.set('');
+            if (!this.hasWelcomed) {
+                this.speak(this.getPersonaRes('welcome'));
+                this.setWelcomePlayed();
+            } else {
+                this.speak(this.getPersonaRes('start'));
+            }
+        } catch (e) { this.restartRecognition(); }
     }
 
     private setWelcomePlayed() {
@@ -150,218 +267,172 @@ export class VoiceControlService {
         }
     }
 
-    private processCommand(rawText: string) {
-        // 1️⃣ Input Cleaning Layer (Requirement 1)
-        let text = rawText.toLowerCase()
-            .replace(/[.,/#!$%^&*;:{}=\-_`~()]/g, "") // Remove punctuation
-            .replace(/\b(now|please|can you|could you|let me|i want to|i would like to)\b/g, "") // Remove fillers
-            .trim();
-
-        if (text.length < 2 || this.isProcessing) return;
+    private processCommand(text: string) {
+        if (this.isProcessing) return;
         this.isProcessing = true;
+        
+        let matchedConcept = '';
+        const lang = this.currentLang();
+        const dict = this.dictionary[lang] || this.dictionary['en-US'];
 
-        // 2️⃣ Semantic Concept Mapping & Similarity (Requirement 1D)
-        const words = text.split(' ');
-        let detectedConcept: string | null = null;
-
-        for (const [concept, keywords] of Object.entries(this.concepts)) {
-            const matchFound = keywords.some(kw => {
-                if (text.includes(kw)) return true;
-                // Partial Similarity (Requirement 1D)
-                return words.some(w => this.getSimilarity(w, kw) > 0.75);
-            });
-
-            if (matchFound) {
-                detectedConcept = concept;
+        for (const [concept, keywords] of Object.entries(dict)) {
+            if (keywords.some(kw => text.includes(kw))) {
+                matchedConcept = concept;
                 break;
             }
         }
 
-        if (detectedConcept) {
-            this.handleNavigation(detectedConcept);
+        // Small talk
+        if (matchedConcept === 'smalltalk' || text.includes('how are you') || text.includes('bagunnara') || text.includes('kaise ho')) {
+            if (text.includes('how') || text.includes('bagunnara') || text.includes('kaise')) {
+                this.speak(this.getPersonaRes('how_are_you'));
+            } else if (text.includes('who') || text.includes('miru') || text.includes('kaun')) {
+                this.speak(this.getPersonaRes('who_are_you'));
+            } else if (text.includes('joke') || text.includes('chutkula')) {
+                this.speak(this.getPersonaRes('joke'));
+            } else {
+                this.isProcessing = false;
+            }
             return;
         }
 
-        // 2️⃣ Scroll Logic Fix (Refined Priority)
-        const lowerText = text.toLowerCase();
-        
-        // Check UP direction first
-        if (lowerText.includes('up') || lowerText.includes('higher') || (lowerText.includes('top') && !lowerText.includes('bottom'))) {
-            if (lowerText.includes('top') || lowerText.includes('start') || lowerText.includes('beginning')) {
-                this.scrollToTop();
-            } else {
-                this.scrollBy(-window.innerHeight * 0.6, "Heading up.");
-            }
-        } 
-        // Check DOWN direction or generic scroll
-        else if (lowerText.includes('down') || lowerText.includes('lower') || lowerText.includes('scroll') || lowerText.includes('next')) {
-            if (lowerText.includes('bottom') || lowerText.includes('end')) {
-                this.scrollToBottom();
-            } else {
-                this.scrollBy(window.innerHeight * 0.6, "Sure, moving down.");
-            }
-        } else if (lowerText.includes('back')) {
-            this.speak("Going back.");
-            window.history.back();
-            setTimeout(() => { this.isProcessing = false; }, 500);
+        // Actions
+        if (matchedConcept === 'dark' || matchedConcept === 'light') {
+            this.handleTheme(matchedConcept);
+        } else if (matchedConcept === 'scroll_up') {
+            this.scrollBy(-window.innerHeight * 0.5, 'up');
+        } else if (matchedConcept === 'scroll_down') {
+            this.scrollBy(window.innerHeight * 0.5, 'down');
+        } else if (matchedConcept) {
+            this.navigate(matchedConcept);
+        } else if (text.includes('linkedin') || text.includes('github') || text.includes('email')) {
+            this.handleLinks(text);
         } else {
-            // "Human-like" interactive fallback
-            if (this.actionVerbs.some(v => text.includes(v)) || text.length > 5) {
-                this.speak(this.getRandomResponse('confused'));
+            if (text.length > 3) {
+                this.speak(this.getPersonaRes('confused'));
             } else {
-                this.isProcessing = false; // Release lock if nothing found
+                // If it's a very short sound or irrelevant, unlock processing
+                this.isProcessing = false;
+                this.transcript.set(''); // Clear small noises
             }
         }
+        
+        // Clear transcript after a short delay if processing is done
+        setTimeout(() => {
+            if (!this.isProcessing && !this.isSpeaking()) {
+                this.transcript.set('');
+            }
+        }, 3000);
     }
 
-    private handleNavigation(concept: string) {
-        const routeMap: Record<string, { path: string, frag: string }> = {
-            home: { path: '/home', frag: 'hero' },
-            about: { path: '/about', frag: 'about' },
-            projects: { path: '/projects', frag: 'projects' },
-            awards: { path: '/awards', frag: 'awards' },
-            showcase: { path: '/showcase', frag: 'showcase' },
-            contact: { path: '/contact', frag: 'contact' }
-        };
-
-        const target = routeMap[concept];
-        if (target) {
-            const response = this.responses[concept]
-                ? this.getRandomResponse(concept)
-                : this.getRandomResponse('navigate_generic', concept);
-
-            this.navigate(target.path, target.frag, response);
+    private handleTheme(type: string) {
+        const current = document.documentElement.getAttribute('data-theme');
+        const btn = document.querySelector('.theme-switch') as HTMLElement;
+        if (type === current) {
+            this.speak(this.getPersonaRes('already', type));
+        } else if (btn) {
+            btn.click();
+            this.speak(this.getPersonaRes(type));
         } else {
             this.isProcessing = false;
         }
     }
 
-    private navigate(path: string, fragment: string, message: string) {
-        this.speak(message);
-        const currentPath = this.router.url.split('#')[0].split('?')[0];
+    private navigate(concept: string) {
+        const routeMap: any = { home:'/home', about:'/about', projects:'/projects', awards:'/awards', showcase:'/home', contact:'/contact' };
+        const path = routeMap[concept];
+        
+        if (!path) {
+            this.isProcessing = false;
+            return;
+        }
 
-        if (currentPath === path || (currentPath === '/' && path === '/home')) {
-            this.scrollToId(fragment);
+        const currentUrl = this.router.url;
+        const targetId = concept === 'showcase' ? 'showcase' : concept;
+
+        if (currentUrl.includes(path) || (currentUrl === '/' && concept === 'home')) {
+            this.speak(this.getPersonaRes(concept));
+            this.scrollToId(targetId);
         } else {
+            this.speak(this.getPersonaRes(concept));
             this.router.navigate([path]).then(() => {
-                setTimeout(() => this.scrollToId(fragment), 500);
+                const searchId = (concept === 'showcase') ? 'showcase' : concept;
+                setTimeout(() => this.scrollToId(searchId), 600);
             });
         }
     }
 
-    // Similarity Utility (Levenshtein Distance)
-    private getSimilarity(s1: string, s2: string): number {
-        let longer = s1; let shorter = s2;
-        if (s1.length < s2.length) { longer = s2; shorter = s1; }
-        const longerLength = longer.length;
-        if (longerLength === 0) return 1.0;
-        return (longerLength - this.editDistance(longer, shorter)) / longerLength;
+    private handleLinks(text: string) {
+        if (text.includes('linkedin')) window.open('https://linkedin.com/in/lok-prasanth', '_blank');
+        else if (text.includes('github')) window.open('https://github.com/lokalamanda', '_blank');
+        else if (text.includes('email')) window.open('mailto:lokalamanda@gmail.com', '_blank');
+        const msg = (this.currentLang() === 'te-IN') ? "ఓపెన్ చేస్తున్నాను." : (this.currentLang() === 'hi-IN' ? "जी, ओपन कर रहा हूं।" : "Opening that for you!");
+        this.speak(msg);
     }
 
-    private editDistance(s1: string, s2: string): number {
-        const costs = [];
-        for (let i = 0; i <= s1.length; i++) {
-            let lastValue = i;
-            for (let j = 0; j <= s2.length; j++) {
-                if (i === 0) costs[j] = j;
-                else if (j > 0) {
-                    let newValue = costs[j - 1];
-                    if (s1.charAt(i - 1) !== s2.charAt(j - 1)) {
-                        newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1;
-                    }
-                    costs[j - 1] = lastValue;
-                    lastValue = newValue;
-                }
-            }
-            if (i > 0) costs[s2.length] = lastValue;
-        }
-        return costs[s2.length];
-    }
-
-    private getRandomResponse(key: string, placeholder = ''): string {
-        const list = this.responses[key] || this.responses['navigate_generic'];
-        const res = list[Math.floor(Math.random() * list.length)];
-        return res.replace('${page}', placeholder);
-    }
-
-    private scrollBy(y: number, message: string) {
-        this.speak(message);
+    private scrollBy(y: number, direction: 'up' | 'down') {
         window.scrollBy({ top: y, behavior: 'smooth' });
-    }
-
-    private scrollToTop() {
-        this.speak(this.getRandomResponse('top'));
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    private scrollToBottom() {
-        this.speak("Moving to the end of the page. Anything else?");
-        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+        this.speak(this.getPersonaRes(direction === 'up' ? 'scroll_up' : 'scroll_down'));
     }
 
     private scrollToId(id: string) {
-        const el = document.getElementById(id) || document.querySelector('section') || document.body;
+        const el = document.getElementById(id);
         if (el) {
-            const y = el.getBoundingClientRect().top + window.pageYOffset - 80;
-            window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+            const yOffset = -100; // Account for fixed navbar
+            const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
+            window.scrollTo({ top: y, behavior: 'smooth' });
+        } else {
+            const firstSection = document.querySelector('section');
+            if (firstSection) firstSection.scrollIntoView({ behavior: 'smooth' });
         }
-        this.isProcessing = false; // Ensure release if no speech follows
+        this.isProcessing = false;
+    }
+
+    private getPersonaRes(key: string, meta = ''): string {
+        const lang = this.currentLang();
+        const templates = this.personas[lang][key] || this.personas['en-US'][key] || ["..."];
+        const raw = templates[Math.floor(Math.random() * templates.length)];
+        return raw.replace('${page}', meta).replace('${lang}', meta);
     }
 
     speak(text: string) {
-        if (!text) {
+        if (!text || !this.synthesis || !isPlatformBrowser(this.platformId)) {
             this.isProcessing = false;
             return;
         }
-        
-        // If already speaking, override instead of just returning (more human-like speed)
-        if (this.isSpeaking()) {
-            this.synthesis.cancel();
-        }
 
-        this.lastResponse.set(text);
+        // 1. Immediately signal we are speaking to prevent input processing
         this.isSpeaking.set(true);
+        this.lastResponse.set(text);
 
-        // STOP recognition during speech (Requirement 1)
-        try { this.recognition.stop(); } catch (e) { }
+        // 2. Stop recognition to prevent feedback
+        try { this.recognition.abort(); } catch (e) {}
+        
+        // 3. Prepare and speak
         this.synthesis.cancel();
-
-        const utterance = new SpeechSynthesisUtterance(text);
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = this.currentLang();
         
-        // Find a softer, natural MALE voice
         const voices = this.synthesis.getVoices();
-        const softMaleVoice = voices.find(v => 
-            (v.name.includes('Male') || v.name.includes('Guy') || v.name.includes('David') || v.name.includes('James')) &&
-            (v.name.includes('Google') || v.name.includes('Natural'))
-        ) || voices.find(v => v.name.includes('Male'));
-        
-        if (softMaleVoice) utterance.voice = softMaleVoice;
+        let voice = voices.find(v => v.lang === u.lang && (v.name.includes('Natural') || v.name.includes('Neural') || v.name.includes('Google') || v.name.includes('Apple')));
+        if (!voice) voice = voices.find(v => v.lang === u.lang);
+        if (voice) u.voice = voice;
 
-        // Soft, mellow male parameters
-        utterance.rate = 0.85;  // Slightly more relaxed pace
-        utterance.pitch = 0.95; // Slightly lower for a mellow, resonant tone
-        utterance.volume = 0.9;
-
-        utterance.onend = () => {
-            // Snappy human transition
+        u.onend = () => {
+            // Give a tiny buffer before allowing recognition again
             setTimeout(() => {
                 this.isSpeaking.set(false);
-                this.isProcessing = false; // Release command lock
-                if (this.isListening()) {
-                    try {
-                        this.recognition.start();
-                        this.transcript.set('Ready');
-                    } catch (e) { }
-                }
-            }, 150);
+                this.isProcessing = false;
+                this.restartRecognition();
+            }, 100);
         };
-        utterance.onerror = () => {
+        u.onerror = (e) => {
+            console.error('Speech synthesis error:', e);
             this.isSpeaking.set(false);
             this.isProcessing = false;
-            if (this.isListening()) {
-                try { this.recognition.start(); } catch (e) { }
-            }
+            this.restartRecognition();
         };
-        this.synthesis.speak(utterance);
+
+        this.synthesis.speak(u);
     }
 }

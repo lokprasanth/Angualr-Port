@@ -20,7 +20,6 @@ export class NavbarComponent {
     navLinks = [
         { label: 'Home', path: '/home', fragment: 'hero' },
         { label: 'About', path: '/about', fragment: 'about' },
-        { label: 'Showcase', path: '/showcase', fragment: 'showcase' },
         { label: 'Projects', path: '/projects', fragment: 'projects' },
         { label: 'Awards', path: '/awards', fragment: 'awards' },
         { label: 'Contact', path: '/contact', fragment: 'contact' }

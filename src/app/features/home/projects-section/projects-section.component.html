@@ -32,11 +32,15 @@
                         
                         <div class="project-tag">{{ project.category }}</div>
                         
-                        <span class="placeholder-icon">{{ 
-                            project.category === 'Frontend' ? '⚛️' : 
-                            project.category === 'Data' ? '📊' : 
-                            project.category === 'Product' ? '⚙️' : '🌐'
-                        }}</span>
+                        @if (project.image) {
+                            <img [src]="project.image" [alt]="project.title" class="project-img">
+                        } @else {
+                            <span class="placeholder-icon">{{ 
+                                project.category === 'Frontend' ? '⚛️' : 
+                                project.category === 'Data' ? '📊' : 
+                                project.category === 'Product' ? '⚙️' : '🌐'
+                            }}</span>
+                        }
 
                         <!-- Interactive Overlay -->
                         <div class="card-overlay">

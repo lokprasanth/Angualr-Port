@@ -304,7 +304,7 @@ export class HeroComponent implements OnInit, AfterViewInit, OnDestroy {
         // Materials
         const isDark = this.themeService.isDark();
         const bodyMat = new THREE.MeshStandardMaterial({
-            color: 0xa3c6b2,
+            color: 0xffffff,
             metalness: 0.6,
             roughness: 0.4,
             emissive: 0x121413,

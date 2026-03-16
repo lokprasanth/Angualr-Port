@@ -21,7 +21,6 @@ export class FooterComponent {
     quickLinks = [
         { label: 'Home', path: '/home' },
         { label: 'About', path: '/about' },
-        { label: 'Showcase', path: '/showcase' },
         { label: 'Projects', path: '/projects' },
         { label: 'Awards', path: '/awards' },
         { label: 'Contact', path: '/contact' }

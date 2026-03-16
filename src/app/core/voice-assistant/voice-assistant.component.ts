@@ -42,7 +42,7 @@ import * as THREE from 'three';
         <canvas #assistantCanvas class="assistant-canvas"></canvas>
         
         @if (!voiceControl.isListening() && !voiceControl.isSpeaking()) {
-            <div class="click-hint">Click me</div>
+            <div class="click-hint">AI Assistant Available</div>
         }
       </div>
     </div>
@@ -67,11 +67,22 @@ import * as THREE from 'three';
         transform: translateY(0);
         pointer-events: auto;
       }
+
+      @media (max-width: 768px) {
+        right: 15px;
+        bottom: 15px;
+        gap: 10px;
+      }
+
+      @media (max-width: 480px) {
+        right: 10px;
+        bottom: 10px;
+      }
     }
 
     .robot-canvas-wrapper {
-      width: 120px;
-      height: 120px;
+      width: 80px;
+      height: 80px;
       cursor: pointer;
       pointer-events: auto;
       position: relative;
@@ -94,6 +105,16 @@ import * as THREE from 'three';
         border-color: var(--accent-secondary);
         box-shadow: 0 0 25px var(--accent-glow);
       }
+
+      @media (max-width: 768px) {
+        width: 65px;
+        height: 65px;
+      }
+
+      @media (max-width: 480px) {
+        width: 55px;
+        height: 55px;
+      }
     }
 
     .assistant-canvas {
@@ -104,18 +125,26 @@ import * as THREE from 'three';
 
     .click-hint {
         position: absolute;
-        top: -30px;
+        top: -35px;
         left: 50%;
         transform: translateX(-50%);
-        font-size: 0.7rem;
-        background: var(--bg-card);
-        color: var(--text-primary);
-        padding: 4px 8px;
-        border-radius: 4px;
-        opacity: 0;
-        transition: opacity 0.3s ease;
+        font-size: 0.65rem;
+        background: var(--accent-primary);
+        color: #fff;
+        padding: 4px 10px;
+        border-radius: 12px;
+        opacity: 0.9;
         white-space: nowrap;
         pointer-events: none;
+        box-shadow: 0 4px 10px var(--accent-glow);
+        animation: hintPulse 2s infinite ease-in-out;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+    }
+
+    @keyframes hintPulse {
+        0%, 100% { transform: translateX(-50%) translateY(0); opacity: 0.8; }
+        50% { transform: translateX(-50%) translateY(-5px); opacity: 1; }
     }
 
     .transcript-bubble {

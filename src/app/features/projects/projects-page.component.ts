@@ -31,9 +31,13 @@ import { fadeInUp, staggerFadeIn } from '../../shared/animations/animations';
           @for (project of projects(); track project.id) {
             <div class="project-full-card glass-card">
               <div class="pf-image">
-                <div class="pf-placeholder" [style.background]="getGradient(project.category)">
-                  <span class="pf-icon">{{ getIcon(project.category) }}</span>
-                </div>
+                @if (project.image) {
+                  <img [src]="project.image" [alt]="project.title" class="pf-img">
+                } @else {
+                  <div class="pf-placeholder" [style.background]="getGradient(project.category)">
+                    <span class="pf-icon">{{ getIcon(project.category) }}</span>
+                  </div>
+                }
               </div>
               <div class="pf-body">
                 <span class="pf-cat">{{ project.category }}</span>
