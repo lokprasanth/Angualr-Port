@@ -109,7 +109,7 @@
     }
 
     &.active {
-        color: var(--text-primary);
+        color: var(--bg-primary);
         background: var(--accent-gradient);
         box-shadow: 0 4px 15px rgba(var(--accent-primary-rgb), 0.3);
     }
