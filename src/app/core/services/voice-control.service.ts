@@ -1,6 +1,13 @@
-import { Injectable, signal, inject, PLATFORM_ID } from '@angular/core';
+import { Injectable, signal, inject, PLATFORM_ID, NgZone } from '@angular/core';
 import { Router } from '@angular/router';
 import { isPlatformBrowser } from '@angular/common';
+
+export interface Intent {
+    category: 'navigation' | 'interaction' | 'theme' | 'query' | 'smalltalk' | 'scroll' | 'unknown';
+    action: string;
+    params?: any;
+    confidence: number;
+}
 
 @Injectable({
     providedIn: 'root'
@@ -8,264 +15,173 @@ import { isPlatformBrowser } from '@angular/common';
 export class VoiceControlService {
     private router = inject(Router);
     private platformId = inject(PLATFORM_ID);
+    private ngZone = inject(NgZone);
 
     private recognition: any;
     private synthesis = (typeof window !== 'undefined') ? window.speechSynthesis : null;
+    private voices: SpeechSynthesisVoice[] = [];
 
-    // Signals
+    // --- State Signals ---
     isSpeaking = signal(false);
     isListening = signal(false);
+    isProcessing = signal(false);
     transcript = signal('');
+    lastResponse = signal('');
     isSupported = signal(false);
     isHeroVisible = signal(false);
-    lastResponse = signal('');
-    
-    // Detection & State
     currentLang = signal('en-US');
+    
+    // Command Hints for UI
+    hintIndex = signal(0);
+    hints = [
+        'Try "Go to Projects"',
+        'Say "Switch to Dark Mode"',
+        'Ask "Who are you?"',
+        'Say "Scroll Down"',
+        'Try "Go to Bottom"'
+    ];
+
+    // --- Internal State ---
     private hasWelcomed = false;
-    private isProcessing = false;
-    private lastCommand = '';
-    private lastCommandTime = 0;
     private restartTimeout: any;
+    private lastCommandTime = 0;
+    private lastCommand = '';
+    private silenceTimer: any;
+    private context: string = 'global'; // Track where the user is in conversation
 
-    // ─── Modern & General Dictionary ──────────────────────────
-    private dictionary: Record<string, Record<string, string[]>> = {
-        'en-US': {
-            home: ['home', 'start', 'main', 'landing', 'back to start'],
-            about: ['about', 'bio', 'who', 'story', 'resume', 'cv', 'experience'],
-            projects: ['projects', 'work', 'apps', 'portfolio', 'stuff'],
-            awards: ['awards', 'prizes', 'won', 'achievements', 'medals'],
-            showcase: ['showcase', 'skills', 'tech', 'stack', 'expertise', 'demonstration'],
-            contact: ['contact', 'hire', 'email', 'message', 'call', 'reach'],
-            dark: ['dark', 'night', 'black', 'dark mode'],
-            light: ['light', 'day', 'white', 'bright'],
-            scroll_up: ['scroll up', 'go up', 'move up', 'page up'],
-            scroll_down: ['scroll down', 'go down', 'move down', 'page down', 'scroll'],
-            smalltalk: ['hi', 'hello', 'hey', 'how are you', 'who are you', 'joke']
-        },
-        'te-IN': {
-            home: ['హోమ్', 'మొదలు', 'ఇల్లు', 'ప్రారంభం'],
-            about: ['గురించి', 'నేను', 'పరిచయం', 'బయో', 'రెజ్యూమ్'],
-            projects: ['ప్రాజెక్టులు', 'పని', 'చేసినవి'],
-            awards: ['అవార్డులు', 'గెలుచుకున్నవి', 'బహుమతులు'],
-            showcase: ['షోకేస్', 'నైపుణ్యాలు', 'టెక్నాలజీ', 'తెలిసినవి'],
-            contact: ['కాంటాక్ట్', 'మెసేజ్', 'ఈమెయిల్', 'ఫోన్'],
-            dark: ['డార్క్', 'నలుపు', 'చీకటి'],
-            light: ['లైట్', 'తెలుపు', 'వెలుగు'],
-            scroll_up: ['పైకి', 'పైకి స్క్రోల్'],
-            scroll_down: ['కిందకు', 'స్క్రోల్', 'కిందకు స్క్రోల్'],
-            smalltalk: ['హలో', 'నమస్కారం', 'బాగున్నారా', 'ఎవరు మీరు']
-        },
-        'hi-IN': {
-            home: ['होम', 'शुरुआत', 'घर', 'स्टार्ट'],
-            about: ['बारे में', 'परिचय', 'बायोडेटा', 'कहानी'],
-            projects: ['प्रोजेक्ट्स', 'काम', 'पोर्टफोलियो'],
-            awards: ['पुरस्कार', 'इनाम', 'जीता'],
-            showcase: ['शोकेस', 'कौशल', 'हुनर', 'टेक्नोलॉजी'],
-            contact: ['संपर्क', 'मैसेज', 'ईमेल', 'नमस्ते'],
-            dark: ['डार्क', 'काला', 'रात'],
-            light: ['लाइट', 'सफेद', 'उजाला'],
-            scroll_up: ['ऊपर', 'पेज ऊपर'],
-            scroll_down: ['नीचे', 'स्क्रोल', 'नीचे स्क्रोल'],
-            smalltalk: ['नमस्ते', 'हैलो', 'कैसे हो', 'कौन हो']
-        }
-    };
-
+    // --- Human-like Personas ---
     private personas: Record<string, any> = {
         'en-US': {
-            welcome: ["Hi! I'm Lok's AI assistant. Want to see some projects or just look around?", "Hello! I can help you find things here. What are you looking for?"],
-            start: ["Listening! Tell me what to do.", "Ready! Where to?"],
-            stop: ["Bye! Have a great day.", "See you later! Enjoy the site."],
-            confused: ["Sorry, I didn't get that. Say it again?", "Not sure what you mean. Try 'projects' or 'about'."],
-            dark: ["Switching to dark mode. Better for eyes!", "Okay, dark mode is on."],
-            light: ["Switching to light mode. Nice and bright!", "Done! Light mode active."],
-            already: ["We are already right here!", "You are already looking at it!"],
-            projects: ["Sure! Here are the projects Lok worked on.", "Let's check out the work. Here you go."],
-            about: ["Of course! Here is Lok's story.", "Changing to the about section now."],
-            showcase: ["Here is the skills showcase. This is what Lok can do!", "Moving to the showcase section to see some cool tech."],
-            awards: ["Checking out the awards! Here is the list.", "Moving to the achievements section."],
-            contact: ["Sure! Here is how you can connect with Lok.", "Taking you to the contact section now."],
-            scroll_up: ["Scrolling up for you.", "Heading back up."],
-            scroll_down: ["Moving down the page.", "Scrolling down."],
-            how_are_you: ["I'm doing great, thanks for asking! How can I help you?", "I'm good! Hope you are having a nice day."],
-            who_are_you: ["I'm an AI assistant. I can navigate the site and answer questions for you.", "Think of me as your guide for this portfolio."],
-            joke: ["Why do birds fly south? Because it's too far to walk! Haha.", "What do you call a fake noodle? An impasta! Haha."]
-        },
-        'te-IN': {
-            welcome: ["హలో! లోక్ పోర్ట్‌ఫోలియోకి స్వాగతం. నేను మీకు ఎలా సహాయం చేయగలను?", "నమస్కారం! నేను మీ అసిస్టెంట్‌ని."],
-            start: ["చెప్పండి, నేను వింటున్నాను.", "సిద్ధం! ఎక్కడికి వెళ్దాం?"],
-            projects: ["ఖచ్చితంగా! ఇక్కడ అన్ని ప్రాజెక్టులు ఉన్నాయి.", "ప్రాజెక్టుల విభాగానికి వెళ్తున్నాం."],
-            about: ["సరే, పరిచయ విభాగానికి తీసుకెళ్తున్నాను.", "లోక్ గురించి ఇక్కడ తెలుసుకోవచ్చు."],
-            showcase: ["షోకేస్ విభాగానికి వెళ్తున్నాం. ఇక్కడ నైపుణ్యాలు చూడవచ్చు.", "ఇదిగోండి షోకేస్!"],
-            awards: ["అవార్డులు ఇక్కడ చూడవచ్చు.", "గెలిచిన బహుమతులు ఇక్కడ ఉన్నాయి."],
-            contact: ["తప్పకుండా! కాంటాక్ట్ సెక్షన్ కి వెళ్తున్నాం.", "నన్ను ఇక్కడ సంప్రదించవచ్చు."],
-            dark: ["సరే, డార్క్ మోడ్ కి మారుస్తున్నాను."],
-            light: ["లైట్ మోడ్ కి మార్చాను."],
-            scroll_up: ["పైకి స్క్రోల్ చేస్తున్నాను."],
-            scroll_down: ["కిందకు స్క్రోల్ చేస్తున్నాను."],
-            confused: ["క్షమించండి, అర్థం కాలేదు. మళ్ళీ చెబుతారా?"],
-            already: ["మనం ఇప్పటికే ఇక్కడే ఉన్నాం!"],
-            how_are_you: ["నేను చాలా బాగున్నాను! మీరు ఎలా ఉన్నారు?"],
-            who_are_you: ["నేను ఒక AI అసిస్టెంట్‌ని."],
-            joke: ["ఒక జోక్ చెప్పనా? కాకికి ఇంగ్లీష్ లో ఏమంటారు? బ్లాక్ బర్డ్! హాహా."]
-        },
-        'hi-IN': {
-            welcome: ["नमस्ते! मैं लोक का AI असिस्टेंट हूं। बताइए, क्या देखना चाहेंगे?"],
-            start: ["जी, मैं सुन रहा हूं।", "बताइए, कहां चलना है?"],
-            projects: ["बिल्कुल! ये रहे वो सारे प्रोजेक्ट्स जो लोक ने बनाए हैं."],
-            about: ["जी, लोक के परिचय वाले भाग में चलते हैं।"],
-            showcase: ["शोक़ेस भाग में चलते हैं। यहाँ हुनर देखिये।", "ये रहा शोक़ेस!"],
-            awards: ["इनाम और पुरस्कार यहां देखिये।"],
-            contact: ["जरूर! संपर्क करने के लिए यहां देखिये।"],
-            dark: ["डार्क मोड ऑन कर दिया है।"],
-            light: ["लाइट मोड ऑन कर दिया।"],
-            scroll_up: ["ऊपर की ओर बढ़ रहे हैं।"],
-            scroll_down: ["नीचे स्क्रोल कर रहा हूं।"],
-            confused: ["माफी चाहता हूं, समझ नहीं आया।"],
-            already: ["हम पहले से ही यहीं पर हैं!"],
-            how_are_you: ["मैं बहुत अच्छा हूं! आप कैसे हैं?"],
-            who_are_you: ["मैं एक AI असिस्टेंट हूं।"],
-            joke: ["चुटकुला सुनेंगे? हाथी और चींटी की दोस्ती हो गई! हाहा।"]
+            welcome: ["Hello! I'm your AI guide. How can I help you today?", "Hi there! I can navigate, change themes, or tell you about Lok's work. What's on your mind?"],
+            start: ["I'm listening!", "Yes? How can I help?", "Ready for your command."],
+            stop: ["Goodbye! Let me know if you need anything else.", "Turning off. See you later!"],
+            confused: ["I didn't quite catch that. Could you try saying it differently?", "I'm not sure how to do that yet. Maybe ask about 'projects' or 'contact'?"],
+            theme_dark: ["Switching to dark mode. Much better for the eyes!", "Shadow mode activated."],
+            theme_light: ["Turning on the lights! Bright mode active.", "Switching to light mode."],
+            navigating: ["Sure, let me take you to ${dest}.", "Moving to the ${dest} section now.", "Heading over to ${dest}!"],
+            clicking: ["Clicking that for you.", "Executing the command.", "Got it, interacting now."],
+            scrolling: ["Scrolling ${dir} for you.", "Moving the page.", "Going to the ${dir}."],
+            already: ["We're already here!", "You're already looking at it!"],
+            smalltalk_how: ["I'm doing great! Just enjoying being an AI. How about you?", "Excellent! Ready to assist you with anything."],
+            smalltalk_who: ["I'm a custom-built AI assistant for this portfolio. My job is to make your visit seamless.", "Think of me as your digital guide through Lok's career!"],
+            joke: ["Why did the web developer walk out of a restaurant? Because of the table layout! Ha-ha.", "What's an AI's favorite food? Micro-chips!"]
         }
     };
 
     constructor() {
         if (isPlatformBrowser(this.platformId)) {
+            this.initVoices();
             this.initRecognition();
-            const played = sessionStorage.getItem('aiWelcomePlayed');
-            this.hasWelcomed = played === 'true';
-
-            // Ensure voices are loaded for synthesis
-            if (this.synthesis) {
-                if (this.synthesis.onvoiceschanged !== undefined) {
-                    this.synthesis.onvoiceschanged = () => this.synthesis?.getVoices();
-                }
-                this.synthesis.getVoices(); // Trigger initial load
-            }
+            this.hasWelcomed = sessionStorage.getItem('aiWelcomePlayed') === 'true';
+            
+            // Cycle hints every 5 seconds
+            setInterval(() => {
+                this.hintIndex.set((this.hintIndex() + 1) % this.hints.length);
+            }, 5000);
         }
+    }
+
+    private initVoices() {
+        if (!this.synthesis) return;
+        const loadVoices = () => {
+            this.voices = this.synthesis!.getVoices();
+        };
+        if (this.synthesis.onvoiceschanged !== undefined) {
+            this.synthesis.onvoiceschanged = loadVoices;
+        }
+        loadVoices();
     }
 
     private initRecognition() {
-        if (!isPlatformBrowser(this.platformId)) return;
         const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-        if (SpeechRecognition) {
-            this.isSupported.set(true);
-            this.recognition = new SpeechRecognition();
-            this.recognition.continuous = true;
-            this.recognition.interimResults = true;
-            this.recognition.lang = this.currentLang();
+        if (!SpeechRecognition) {
+            this.isSupported.set(false);
+            return;
+        }
 
-            this.recognition.onstart = () => {
+        this.isSupported.set(true);
+        this.recognition = new SpeechRecognition();
+        this.recognition.continuous = true;
+        this.recognition.interimResults = true;
+        this.recognition.lang = this.currentLang();
+
+        this.recognition.onstart = () => {
+            this.ngZone.run(() => {
                 this.isListening.set(true);
-                this.isProcessing = false; // Reset on start to ensure we aren't locked
-            };
+                this.isProcessing.set(false);
+            });
+        };
 
-            this.recognition.onresult = (event: any) => {
-                // If we are currently speaking, ignore any microphone input to prevent self-triggering
-                if (this.isSpeaking()) return;
+        this.recognition.onresult = (event: any) => {
+            if (this.isSpeaking()) return;
 
-                let finalTranscript = '';
-                let interimTranscript = '';
+            let interimTranscript = '';
+            let finalTranscript = '';
 
-                for (let i = event.resultIndex; i < event.results.length; ++i) {
-                    if (event.results[i].isFinal) {
-                        finalTranscript += event.results[i][0].transcript;
-                    } else {
-                        interimTranscript += event.results[i][0].transcript;
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+                const text = event.results[i][0].transcript;
+                if (event.results[i].isFinal) finalTranscript += text;
+                else interimTranscript += text;
+            }
+
+            this.ngZone.run(() => {
+                const textToShow = interimTranscript || finalTranscript;
+                this.transcript.set(textToShow);
+                
+                // --- Fast Path: Process obvious interim commands for zero-latency ---
+                if (interimTranscript.length > 3) {
+                    const quickIntent = this.parseIntent(interimTranscript.toLowerCase().trim());
+                    // Only execute 'safe' high-confidence actions from interim (scroll, theme)
+                    if (quickIntent.confidence >= 0.9 && (quickIntent.category === 'scroll' || quickIntent.category === 'theme')) {
+                        this.handleInput(interimTranscript.toLowerCase().trim(), true);
+                        return;
                     }
-                }
-
-                if (interimTranscript) {
-                    this.transcript.set(interimTranscript);
-                    this.detectLanguage(interimTranscript);
                 }
 
                 if (finalTranscript) {
-                    const text = finalTranscript.toLowerCase().trim();
-                    this.transcript.set(text);
-                    
-                    // Prevent duplicate commands firing in rapid succession
-                    const now = Date.now();
-                    if (text === this.lastCommand && now - this.lastCommandTime < 1500) return;
-                    
-                    this.lastCommand = text;
-                    this.lastCommandTime = now;
-                    this.processCommand(text);
+                    this.handleInput(finalTranscript.toLowerCase().trim(), false);
                 }
-            };
+            });
+        };
 
-            this.recognition.onerror = (event: any) => {
-                console.warn('Speech recognition error:', event.error);
-                
-                if (event.error === 'not-allowed') {
-                    this.isListening.set(false);
-                    this.transcript.set('Permission denied. Please enable microphone.');
-                    // Explicit alert for mobile users to help discovery
-                    if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-                        alert("Microphone access is required for the AI Assistant. Please enable it in your browser settings.");
-                    }
-                } else if (event.error === 'network') {
-                    this.transcript.set('Network error. Check your connection.');
-                } else if (event.error === 'no-speech') {
-                    // This is common, just restart quietly
-                }
-                
-                // Don't auto-restart on critical permission errors
-                if (event.error !== 'not-allowed' && event.error !== 'service-not-allowed') {
-                    this.restartRecognition();
-                } else {
-                    this.isListening.set(false);
-                }
-            };
-            
-            this.recognition.onend = () => {
-                if (this.isListening() && !this.isSpeaking()) {
-                    this.restartRecognition();
-                }
-            };
-        } else {
-            this.isSupported.set(false);
-            console.warn('Speech Recognition API not found in this browser.');
-        }
+        this.recognition.onerror = (event: any) => {
+            console.warn('AI Recognition Error:', event.error);
+            if (event.error === 'not-allowed') {
+                this.isListening.set(false);
+                this.isSupported.set(false); // Disable if blocked
+            }
+            if (event.error !== 'no-speech' && event.error !== 'not-allowed') {
+                this.restartRecognition();
+            }
+        };
+
+        this.recognition.onend = () => {
+            if (this.isListening() && !this.isSpeaking()) {
+                this.restartRecognition();
+            }
+        };
     }
 
     private restartRecognition() {
-        if (!isPlatformBrowser(this.platformId) || !this.recognition) return;
-        
-        if (this.isListening() && !this.isSpeaking()) {
-            clearTimeout(this.restartTimeout);
-            this.restartTimeout = setTimeout(() => {
-                try { 
-                    this.recognition.abort(); // Ensure it's fully stopped before starting
-                    setTimeout(() => {
-                        try {
-                            this.recognition.lang = this.currentLang();
-                            this.recognition.start();
-                        } catch (e) {}
-                    }, 100);
-                } catch (e) {}
-            }, 600);
-        }
-    }
-
-    private detectLanguage(text: string) {
-        const isTelugu = /[\u0C00-\u0C7F]/.test(text);
-        const isHindi = /[\u0900-\u097F]/.test(text);
-        let newLang = 'en-US';
-        if (isTelugu) newLang = 'te-IN';
-        else if (isHindi) newLang = 'hi-IN';
-        if (newLang !== this.currentLang()) {
-            this.currentLang.set(newLang);
-            if (this.recognition) this.recognition.lang = newLang;
-        }
+        if (!this.recognition || !this.isListening()) return;
+        clearTimeout(this.restartTimeout);
+        this.restartTimeout = setTimeout(() => {
+            try {
+                this.recognition.stop();
+                setTimeout(() => {
+                    if (this.isListening() && !this.isSpeaking()) {
+                        this.recognition.lang = this.currentLang();
+                        this.recognition.start();
+                    }
+                }, 100);
+            } catch (e) {}
+        }, 400);
     }
 
     toggleListening() {
         if (!this.isSupported()) return;
         if (this.isListening()) {
-            this.isListening.set(false);
-            this.speak(this.getPersonaRes('stop'));
-            try { this.recognition.stop(); } catch (e) {}
+            this.stop();
         } else {
             this.start();
         }
@@ -273,191 +189,284 @@ export class VoiceControlService {
 
     private start() {
         this.isListening.set(true);
-        this.transcript.set('Ready...');
         try {
             this.recognition.start();
             if (!this.hasWelcomed) {
-                this.speak(this.getPersonaRes('welcome'));
-                this.setWelcomePlayed();
+                this.speak(this.getRes('welcome'));
+                this.hasWelcomed = true;
+                sessionStorage.setItem('aiWelcomePlayed', 'true');
             } else {
-                this.speak(this.getPersonaRes('start'));
+                this.speak(this.getRes('start'));
             }
         } catch (e) { this.restartRecognition(); }
     }
 
-    private setWelcomePlayed() {
-        this.hasWelcomed = true;
-        if (isPlatformBrowser(this.platformId)) {
-            sessionStorage.setItem('aiWelcomePlayed', 'true');
-        }
+    private stop() {
+        this.isListening.set(false);
+        this.speak(this.getRes('stop'));
+        try { this.recognition.stop(); } catch (e) {}
     }
 
-    private processCommand(text: string) {
-        if (this.isProcessing) return;
-        this.isProcessing = true;
+    private async handleInput(text: string, isInterim: boolean = false) {
+        if (text.length < 2 || this.isProcessing()) return;
         
-        let matchedConcept = '';
-        const lang = this.currentLang();
-        const dict = this.dictionary[lang] || this.dictionary['en-US'];
-
-        for (const [concept, keywords] of Object.entries(dict)) {
-            if (keywords.some(kw => text.includes(kw))) {
-                matchedConcept = concept;
-                break;
-            }
-        }
-
-        // Small talk
-        if (matchedConcept === 'smalltalk' || text.includes('how are you') || text.includes('bagunnara') || text.includes('kaise ho')) {
-            if (text.includes('how') || text.includes('bagunnara') || text.includes('kaise')) {
-                this.speak(this.getPersonaRes('how_are_you'));
-            } else if (text.includes('who') || text.includes('miru') || text.includes('kaun')) {
-                this.speak(this.getPersonaRes('who_are_you'));
-            } else if (text.includes('joke') || text.includes('chutkula')) {
-                this.speak(this.getPersonaRes('joke'));
-            } else {
-                this.isProcessing = false;
-            }
-            return;
-        }
-
-        // Actions
-        if (matchedConcept === 'dark' || matchedConcept === 'light') {
-            this.handleTheme(matchedConcept);
-        } else if (matchedConcept === 'scroll_up') {
-            this.scrollBy(-window.innerHeight * 0.5, 'up');
-        } else if (matchedConcept === 'scroll_down') {
-            this.scrollBy(window.innerHeight * 0.5, 'down');
-        } else if (matchedConcept) {
-            this.navigate(matchedConcept);
-        } else if (text.includes('linkedin') || text.includes('github') || text.includes('email')) {
-            this.handleLinks(text);
-        } else {
-            if (text.length > 3) {
-                this.speak(this.getPersonaRes('confused'));
-            } else {
-                // If it's a very short sound or irrelevant, unlock processing
-                this.isProcessing = false;
-                this.transcript.set(''); // Clear small noises
-            }
-        }
+        // Anti-duplicate protection (Reduced for snappiness)
+        const now = Date.now();
+        if (text === this.lastCommand && now - this.lastCommandTime < 800) return;
         
-        // Clear transcript after a short delay if processing is done
+        // Don't process the same command twice if it was already handled by interim logic
+        if (!isInterim && text === this.lastCommand && now - this.lastCommandTime < 2000) return;
+
+        this.lastCommand = text;
+        this.lastCommandTime = now;
+
+        const intent = this.parseIntent(text);
+        if (intent.confidence < 0.5 && isInterim) return; // Ignore weak interim matches
+
+        this.isProcessing.set(true);
+        await this.executeIntent(intent, text);
+        
+        // Fast reset for better UX
+        const delay = isInterim ? 1000 : 2500;
         setTimeout(() => {
-            if (!this.isProcessing && !this.isSpeaking()) {
+            if (!this.isSpeaking()) {
                 this.transcript.set('');
+                this.isProcessing.set(false);
             }
-        }, 3000);
+        }, delay);
     }
 
-    private handleTheme(type: string) {
-        const current = document.documentElement.getAttribute('data-theme');
-        const btn = document.querySelector('.theme-switch') as HTMLElement;
-        if (type === current) {
-            this.speak(this.getPersonaRes('already', type));
-        } else if (btn) {
-            btn.click();
-            this.speak(this.getPersonaRes(type));
-        } else {
-            this.isProcessing = false;
+    private parseIntent(text: string): Intent {
+        // --- 1. Theme Check ---
+        if (/\b(dark|night|black|shadow)\b/.test(text)) return { category: 'theme', action: 'dark', confidence: 1 };
+        if (/\b(light|day|white|bright)\b/.test(text)) return { category: 'theme', action: 'light', confidence: 1 };
+
+        // --- 2. Navigation Check ---
+        const navMap: Record<string, string[]> = {
+            'home': ['home', 'start', 'main', 'landing'],
+            'about': ['about', 'bio', 'story', 'resume', 'experience'],
+            'projects': ['projects', 'work', 'portfolio', 'apps'],
+            'contact': ['contact', 'hire', 'email', 'reach'],
+            'awards': ['awards', 'prizes', 'achievements'],
+            'showcase': ['skills', 'tech', 'stack', 'showcase']
+        };
+
+        for (const [action, keywords] of Object.entries(navMap)) {
+            if (keywords.some(kw => text.includes(kw))) {
+                return { category: 'navigation', action, confidence: 0.9 };
+            }
+        }
+
+        // --- 3. Interaction Check (The "Click anything" engine) ---
+        if (/\b(click|open|go to|press|select)\b/.test(text)) {
+            const target = text.replace(/\b(click|open|go to|press|select|the|button|link)\b/g, '').trim();
+            if (target) return { category: 'interaction', action: 'click', params: target, confidence: 0.8 };
+        }
+
+        // --- 4. Scrolling Check ---
+        const isScroll = /\b(scroll|move|page|go|slide|take me)\b/.test(text);
+        if (isScroll || /\b(up|down|top|bottom)\b/.test(text)) {
+            if (/\b(down|under|below)\b/.test(text)) return { category: 'scroll', action: 'down', confidence: 0.9 };
+            if (/\b(up|above)\b/.test(text)) return { category: 'scroll', action: 'up', confidence: 0.9 };
+            if (/\b(top|start|beginning|highest)\b/.test(text)) return { category: 'scroll', action: 'top', confidence: 0.9 };
+            if (/\b(bottom|end|finish|lowest)\b/.test(text)) return { category: 'scroll', action: 'bottom', confidence: 0.9 };
+        }
+
+        // --- 5. Smalltalk Check ---
+        if (/\b(how are you|how's it going|how are ya)\b/.test(text)) return { category: 'smalltalk', action: 'how', confidence: 1 };
+        if (/\b(who are you|what are you|your name)\b/.test(text)) return { category: 'smalltalk', action: 'who', confidence: 1 };
+        if (/\b(joke|laugh|funny)\b/.test(text)) return { category: 'smalltalk', action: 'joke', confidence: 1 };
+
+        return { category: 'unknown', action: 'confused', confidence: 0 };
+    }
+
+    private async executeIntent(intent: Intent, rawText: string) {
+        switch (intent.category) {
+            case 'theme':
+                this.performTheme(intent.action);
+                break;
+            case 'scroll':
+                this.performScroll(intent.action);
+                break;
+            case 'navigation':
+                this.performNavigation(intent.action);
+                break;
+            case 'interaction':
+                if (intent.action === 'click') {
+                    const success = this.discoverAndClick(intent.params);
+                    if (success) {
+                        this.speak(this.getRes('clicking'));
+                    } else {
+                        // Fallback: search for it as a navigation target
+                        this.performNavigation(intent.params);
+                    }
+                }
+                break;
+            case 'smalltalk':
+                this.speak(this.getRes(`smalltalk_${intent.action}`));
+                break;
+            default:
+                // Global fallback for direct element interaction without "click" prefix
+                if (rawText.length > 3) {
+                    if (!this.discoverAndClick(rawText)) {
+                        this.speak(this.getRes('confused'));
+                    } else {
+                        this.speak(this.getRes('clicking'));
+                    }
+                }
         }
     }
 
-    private navigate(concept: string) {
-        const routeMap: any = { home:'/home', about:'/about', projects:'/projects', awards:'/awards', showcase:'/home', contact:'/contact' };
-        const path = routeMap[concept];
-        
-        if (!path) {
-            this.isProcessing = false;
+    private performTheme(mode: string) {
+        const current = document.documentElement.getAttribute('data-theme');
+        if (current === mode) {
+            this.speak(this.getRes('already'));
             return;
         }
+        const btn = document.querySelector('.theme-switch') as HTMLElement;
+        if (btn) {
+            btn.click();
+            this.speak(this.getRes(`theme_${mode}`));
+        }
+    }
 
-        const currentUrl = this.router.url;
-        const targetId = concept === 'showcase' ? 'showcase' : concept;
+    private performScroll(action: string) {
+        this.speak(this.getRes('scrolling').replace('${dir}', action));
+        switch (action) {
+            case 'up': window.scrollBy({ top: -window.innerHeight * 0.7, behavior: 'smooth' }); break;
+            case 'down': window.scrollBy({ top: window.innerHeight * 0.7, behavior: 'smooth' }); break;
+            case 'top': window.scrollTo({ top: 0, behavior: 'smooth' }); break;
+            case 'bottom': window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' }); break;
+        }
+    }
 
-        if (currentUrl.includes(path) || (currentUrl === '/' && concept === 'home')) {
-            this.speak(this.getPersonaRes(concept));
-            this.scrollToId(targetId);
-        } else {
-            this.speak(this.getPersonaRes(concept));
+    private performNavigation(target: string) {
+        const routeMap: any = { home:'/home', about:'/about', projects:'/projects', awards:'/awards', showcase:'/home', contact:'/contact' };
+        let path = routeMap[target];
+
+        // Advanced matching for unknown targets
+        if (!path) {
+            const keys = Object.keys(routeMap);
+            const match = keys.find(k => target.includes(k) || k.includes(target));
+            if (match) path = routeMap[match];
+        }
+
+        if (path) {
+            this.speak(this.getRes('navigating').replace('${dest}', target));
             this.router.navigate([path]).then(() => {
-                const searchId = (concept === 'showcase') ? 'showcase' : concept;
-                setTimeout(() => this.scrollToId(searchId), 600);
+                setTimeout(() => {
+                    const el = document.getElementById(target === 'showcase' ? 'showcase' : target);
+                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 500);
+            });
+        } else {
+            this.speak(this.getRes('confused'));
+        }
+    }
+
+    private discoverAndClick(target: string): boolean {
+        // Optimize discovery by prioritizing common interactive elements
+        const elements = Array.from(document.querySelectorAll('button, a, .nav-link, .btn, [role="button"], input[type="button"], input[type="submit"]'));
+        const search = target.toLowerCase().trim();
+        
+        if (search.length < 2) return false;
+
+        // 1. Exact Text Match (Prioritize)
+        let found = elements.find(el => {
+            const text = el.textContent?.toLowerCase().trim();
+            return text === search || text === search + 's'; // simple plural
+        });
+        
+        // 2. Exact Attribute Match (Aria-label, title)
+        if (!found) {
+            found = elements.find(el => 
+                el.getAttribute('aria-label')?.toLowerCase().trim() === search || 
+                el.getAttribute('title')?.toLowerCase().trim() === search
+            );
+        }
+
+        // 3. Fuzzy Text Match (Includes)
+        if (!found) {
+            found = elements.find(el => {
+                const text = el.textContent?.toLowerCase();
+                return text && (text.includes(search) || search.includes(text)) && text.length > 1;
             });
         }
-    }
 
-    private handleLinks(text: string) {
-        if (text.includes('linkedin')) window.open('https://linkedin.com/in/lok-prasanth', '_blank');
-        else if (text.includes('github')) window.open('https://github.com/lokalamanda', '_blank');
-        else if (text.includes('email')) window.open('mailto:lokalamanda@gmail.com', '_blank');
-        const msg = (this.currentLang() === 'te-IN') ? "ఓపెన్ చేస్తున్నాను." : (this.currentLang() === 'hi-IN' ? "जी, ओपन कर रहा हूं।" : "Opening that for you!");
-        this.speak(msg);
-    }
-
-    private scrollBy(y: number, direction: 'up' | 'down') {
-        window.scrollBy({ top: y, behavior: 'smooth' });
-        this.speak(this.getPersonaRes(direction === 'up' ? 'scroll_up' : 'scroll_down'));
-    }
-
-    private scrollToId(id: string) {
-        const el = document.getElementById(id);
-        if (el) {
-            const yOffset = -100; // Account for fixed navbar
-            const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
-            window.scrollTo({ top: y, behavior: 'smooth' });
-        } else {
-            const firstSection = document.querySelector('section');
-            if (firstSection) firstSection.scrollIntoView({ behavior: 'smooth' });
+        // 4. Fuzzy Attribute Match
+        if (!found) {
+            found = elements.find(el => {
+                const label = el.getAttribute('aria-label')?.toLowerCase() || el.getAttribute('title')?.toLowerCase();
+                return label && (label.includes(search) || search.includes(label));
+            });
         }
-        this.isProcessing = false;
+
+        if (found) {
+            const htmlEl = found as HTMLElement;
+            
+            // Visual feedback of the click (Ripple effect simulation)
+            const originalTransition = htmlEl.style.transition;
+            const originalTransform = htmlEl.style.transform;
+            htmlEl.style.transition = 'all 0.1s ease';
+            htmlEl.style.transform = (originalTransform || '') + ' scale(0.95)';
+            
+            setTimeout(() => {
+                htmlEl.click();
+                setTimeout(() => {
+                    htmlEl.style.transform = originalTransform;
+                    htmlEl.style.transition = originalTransition;
+                }, 100);
+            }, 50);
+            
+            return true;
+        }
+        return false;
     }
 
-    private getPersonaRes(key: string, meta = ''): string {
+    private getRes(key: string): string {
         const lang = this.currentLang();
-        const templates = this.personas[lang][key] || this.personas['en-US'][key] || ["..."];
-        const raw = templates[Math.floor(Math.random() * templates.length)];
-        return raw.replace('${page}', meta).replace('${lang}', meta);
+        const templates = this.personas[lang]?.[key] || this.personas['en-US'][key] || ["..."];
+        return templates[Math.floor(Math.random() * templates.length)];
     }
 
     speak(text: string) {
-        if (!text || !this.synthesis || !isPlatformBrowser(this.platformId)) {
-            this.isProcessing = false;
+        if (!text || !this.synthesis) {
+            this.isProcessing.set(false);
             return;
         }
 
-        // 1. Immediately signal we are speaking to prevent input processing
+        // Interrupt recognition while speaking to prevent echo feedback
+        if (this.recognition) {
+            try { this.recognition.abort(); } catch(e){}
+        }
+
         this.isSpeaking.set(true);
         this.lastResponse.set(text);
-
-        // 2. Stop recognition to prevent feedback
-        try { this.recognition.abort(); } catch (e) {}
-        
-        // 3. Prepare and speak
         this.synthesis.cancel();
-        const u = new SpeechSynthesisUtterance(text);
-        u.lang = this.currentLang();
+
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = this.currentLang();
         
-        const voices = this.synthesis.getVoices();
-        let voice = voices.find(v => v.lang === u.lang && (v.name.includes('Natural') || v.name.includes('Neural') || v.name.includes('Google') || v.name.includes('Apple')));
-        if (!voice) voice = voices.find(v => v.lang === u.lang);
-        if (voice) u.voice = voice;
+        // Select a premium natural voice if available
+        const preferred = this.voices.find(v => v.lang === utterance.lang && (v.name.includes('Natural') || v.name.includes('Neural') || v.name.includes('Google') || v.name.includes('Apple')));
+        if (preferred) utterance.voice = preferred;
 
-        u.onend = () => {
-            // Give a tiny buffer before allowing recognition again
-            setTimeout(() => {
+        utterance.onend = () => {
+            this.ngZone.run(() => {
                 this.isSpeaking.set(false);
-                this.isProcessing = false;
-                this.restartRecognition();
-            }, 100);
-        };
-        u.onerror = (e) => {
-            console.error('Speech synthesis error:', e);
-            this.isSpeaking.set(false);
-            this.isProcessing = false;
-            this.restartRecognition();
+                this.isProcessing.set(false);
+                if (this.isListening()) this.restartRecognition();
+            });
         };
 
-        this.synthesis.speak(u);
+        utterance.onerror = () => {
+            this.ngZone.run(() => {
+                this.isSpeaking.set(false);
+                this.isProcessing.set(false);
+                if (this.isListening()) this.restartRecognition();
+            });
+        };
+
+        this.synthesis.speak(utterance);
     }
 }

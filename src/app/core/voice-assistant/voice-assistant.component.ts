@@ -23,32 +23,58 @@ import * as THREE from 'three';
     template: `
     <div class="voice-assistant-container" 
          [class.listening]="voiceControl.isListening()"
+         [class.processing]="voiceControl.isProcessing()"
+         [class.speaking]="voiceControl.isSpeaking()"
          [class.sticky-visible]="shouldShowSticky()"
          [class.unsupported]="!voiceControl.isSupported()">
       
-      <!-- Speech Bubble (Jarvis style) -->
+      <!-- Status Badge -->
+      @if (voiceControl.isListening() || voiceControl.isProcessing()) {
+        <div class="status-badge" @bubbleScale [class.processing]="voiceControl.isProcessing()">
+          <span class="status-dot"></span>
+          {{ voiceControl.isProcessing() ? 'Thinking' : 'Listening' }}
+        </div>
+      }
+
+      <!-- Speech Bubble -->
       @if (showSpeechBubble()) {
-        <div class="transcript-bubble" @bubbleScale [class.is-speaking]="voiceControl.isSpeaking()">
+        <div class="transcript-bubble" @bubbleScale 
+             [class.is-speaking]="voiceControl.isSpeaking()" 
+             [class.is-processing]="voiceControl.isProcessing()">
           <div class="bubble-content">
-            {{ voiceControl.isSpeaking() ? voiceControl.lastResponse() : voiceControl.transcript() }}
+            <div class="bubble-icon">{{ voiceControl.isSpeaking() ? '🤖' : '👤' }}</div>
+            <div class="text-wrapper">
+              @if (voiceControl.isProcessing() && !voiceControl.transcript()) {
+                <div class="processing-dots"><span>.</span><span>.</span><span>.</span></div>
+              } @else {
+                {{ voiceControl.isSpeaking() ? voiceControl.lastResponse() : (voiceControl.transcript() || '...') }}
+              }
+            </div>
           </div>
           <div class="bubble-arrow"></div>
+        </div>
+      }
+
+      <!-- Command Hint Bubble -->
+      @if (!voiceControl.isListening() && !voiceControl.isSpeaking() && !voiceControl.isProcessing() && showSpeechBubble()) {
+        <div class="hint-bubble" @bubbleScale>
+          <div class="hint-label">Guided Navigation</div>
+          <div class="hint-text">"{{ voiceControl.hints[voiceControl.hintIndex()] }}"</div>
         </div>
       }
 
       <!-- 3D Mini Robot Assistant -->
       <div class="robot-canvas-wrapper" 
            (click)="handleAssistantClick()"
-           [class.assistant-active]="voiceControl.isListening() || voiceControl.isSpeaking()"
-           [title]="voiceControl.isSupported() ? 'Click to talk' : 'Voice not supported in this browser'">
+           [class.pulse-active]="voiceControl.isListening()"
+           [class.assistant-active]="voiceControl.isListening() || voiceControl.isSpeaking() || voiceControl.isProcessing()"
+           [title]="voiceControl.isSupported() ? 'Click to talk' : 'Voice not supported'">
         <canvas #assistantCanvas class="assistant-canvas" [class.hidden]="!voiceControl.isSupported()"></canvas>
         
-        @if (!voiceControl.isSupported()) {
-            <div class="unsupported-icon">🚫</div>
-        }
+        @if (!voiceControl.isSupported()) { <div class="unsupported-icon">🚫</div> }
 
-        @if (!voiceControl.isListening() && !voiceControl.isSpeaking()) {
-            <div class="click-hint">{{ voiceControl.isSupported() ? 'AI Assistant' : 'Not Supported' }}</div>
+        @if (!voiceControl.isListening() && !voiceControl.isSpeaking() && !voiceControl.isProcessing()) {
+            <div class="click-hint">Talk</div>
         }
       </div>
     </div>
@@ -95,7 +121,6 @@ import * as THREE from 'three';
       position: relative;
       background: rgba(255, 255, 255, 0.05);
       backdrop-filter: blur(25px);
-      -webkit-backdrop-filter: blur(25px);
       border-radius: 50%;
       border: 1px solid rgba(255, 255, 255, 0.1);
       transition: all 0.4s var(--transition-spring);
@@ -104,107 +129,98 @@ import * as THREE from 'three';
       align-items: center;
       justify-content: center;
 
-      &::after {
+      &.pulse-active::before {
         content: '';
         position: absolute;
-        inset: -2px;
-        background: conic-gradient(from 0deg, var(--accent-primary), var(--accent-secondary), var(--accent-tertiary), var(--accent-primary));
-        z-index: -1;
-        border-radius: inherit;
-        opacity: 0.3;
-        animation: rotateGlow 4s linear infinite;
-        filter: blur(10px);
-      }
-
-      &:hover {
-        transform: scale(1.1);
-        border-color: var(--accent-primary);
-        box-shadow: 0 15px 50px var(--accent-glow);
+        inset: -10px;
+        border-radius: 50%;
+        border: 2px solid var(--accent-primary);
+        animation: ripple 1.5s infinite;
+        opacity: 0;
       }
 
       &.assistant-active {
         border-color: var(--accent-secondary);
-        box-shadow: 0 0 40px var(--accent-glow);
-        transform: scale(1.05);
-      }
-
-      @media (max-width: 480px) {
-        width: 60px;
-        height: 60px;
+        box-shadow: 0 0 40px rgba(var(--accent-secondary-rgb), 0.3);
       }
     }
 
-    @keyframes rotateGlow {
-        from { transform: rotate(0deg); }
-        to { transform: rotate(360deg); }
+    @keyframes ripple {
+      0% { transform: scale(0.8); opacity: 0.8; }
+      100% { transform: scale(1.3); opacity: 0; }
     }
 
-    .assistant-canvas {
-      width: 100% !important;
-      height: 100% !important;
-      display: block;
-      &.hidden { display: none; }
-    }
-
-    .click-hint {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%) scale(0.9);
-        font-size: 0.8rem;
-        color: var(--text-primary);
-        opacity: 0;
-        white-space: nowrap;
-        pointer-events: none;
-        transition: all 0.3s ease;
-        font-weight: 700;
-        letter-spacing: 1px;
-        text-transform: uppercase;
-        z-index: 5;
-
-        @media (max-width: 480px) {
-            display: none;
-        }
-    }
-
-    .transcript-bubble {
+    .status-badge {
+      position: absolute;
+      top: -45px;
       background: var(--bg-glass);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid var(--bg-glass-border);
-      padding: 14px 20px;
+      padding: 6px 12px;
       border-radius: 20px;
-      max-width: 300px;
-      box-shadow: var(--shadow-lg);
-      margin-right: 15px;
-      position: relative;
-      pointer-events: auto;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid var(--bg-glass-border);
+      animation: badgeSlide 0.3s ease;
 
-      @media (max-width: 480px) {
-          max-width: calc(100vw - 40px);
-          padding: 10px 18px;
-          margin-right: 0;
-          text-align: center;
-          border-radius: 18px;
-          font-size: 0.85rem;
+      .status-dot {
+        width: 8px;
+        height: 8px;
+        background: #22c55e;
+        border-radius: 50%;
+        box-shadow: 0 0 10px #22c55e;
+        animation: dotPulse 1s infinite alternate;
       }
 
-      &.is-speaking {
-          border-color: var(--accent-primary);
-          box-shadow: 0 0 20px var(--accent-glow);
+      &.processing {
+        .status-dot { background: var(--accent-secondary); box-shadow: 0 0 10px var(--accent-secondary); }
+      }
+    
+
+    @keyframes dotPulse {
+      from { opacity: 0.5; transform: scale(0.8); }
+      to { opacity: 1; transform: scale(1.1); }
+    }
+
+    .bubble-content {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      color: var(--text-primary);
+
+      .bubble-icon {
+        font-size: 1.2rem;
+        flex-shrink: 0;
+        margin-top: -2px;
       }
 
-      .bubble-content {
-        color: var(--text-primary);
-        font-size: 0.95rem;
-        line-height: 1.4;
+      .text-wrapper {
+        flex: 1;
+        font-size: 0.9rem;
         font-weight: 500;
-        text-align: right;
+        line-height: 1.5;
+        text-align: left;
+      }
+    }
 
-        @media (max-width: 480px) {
-            font-size: 0.8rem;
-            text-align: center;
-        }
+      .processing-dots {
+          display: flex;
+          gap: 4px;
+          justify-content: flex-end;
+          padding: 5px 0;
+          
+          span {
+              width: 6px;
+              height: 6px;
+              background: var(--accent-secondary);
+              border-radius: 50%;
+              animation: dotFlashing 1s infinite alternate;
+              
+              &:nth-child(2) { animation-delay: 0.2s; }
+              &:nth-child(3) { animation-delay: 0.4s; }
+          }
       }
 
       .bubble-arrow {
@@ -222,6 +238,52 @@ import * as THREE from 'three';
             display: none; 
         }
       }
+    }
+
+    .hint-bubble {
+      background: var(--bg-glass);
+      backdrop-filter: blur(15px);
+      -webkit-backdrop-filter: blur(15px);
+      border: 1px solid var(--accent-glow);
+      padding: 10px 15px;
+      border-radius: 12px;
+      margin-right: 15px;
+      margin-bottom: 5px;
+      pointer-events: auto;
+      max-width: 200px;
+      animation: floatHint 3s infinite ease-in-out;
+
+      .hint-label {
+        font-size: 0.65rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        color: var(--accent-secondary);
+        letter-spacing: 1px;
+        margin-bottom: 2px;
+        text-align: right;
+      }
+
+      .hint-text {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        font-style: italic;
+        text-align: right;
+      }
+    }
+
+    @keyframes floatHint {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-5px); }
+    }
+
+    @keyframes thinkingPulse {
+        0%, 100% { box-shadow: 0 0 10px rgba(var(--accent-secondary-rgb), 0.1); }
+        50% { box-shadow: 0 0 30px rgba(var(--accent-secondary-rgb), 0.3); }
+    }
+
+    @keyframes dotFlashing {
+        0% { opacity: 0.2; transform: scale(0.8); }
+        100% { opacity: 1; transform: scale(1.2); }
     }
     `]
 })
@@ -268,16 +330,14 @@ export class VoiceAssistantComponent implements OnInit, AfterViewInit, OnDestroy
         effect(() => {
             const isListening = this.voiceControl.isListening();
             const isSpeaking = this.voiceControl.isSpeaking();
+            const isProcessing = this.voiceControl.isProcessing();
             const transcript = this.voiceControl.transcript();
             
-            if (isSpeaking || (isListening && transcript)) {
+            if (isSpeaking || isProcessing || (isListening && transcript)) {
                 this.showSpeechBubble.set(true);
             } else {
-                setTimeout(() => {
-                    if (!this.voiceControl.isListening() && !this.voiceControl.isSpeaking()) {
-                        this.showSpeechBubble.set(false);
-                    }
-                }, 2000);
+                // Keep bubble visible for hints when idle
+                this.showSpeechBubble.set(true);
             }
         });
 
@@ -506,13 +566,18 @@ export class VoiceAssistantComponent implements OnInit, AfterViewInit, OnDestroy
             this.gestureTimeMin += 0.016;
             this.idleActivityTimeMin += 0.016;
             const isSpeaking = this.voiceControl.isSpeaking();
+            const isProcessing = this.voiceControl.isProcessing();
             
-            if (isSpeaking) {
+            if (isSpeaking || isProcessing) {
                 this.idleActivityMin = 'normal';
                 if (this.gestureTimeMin > 3.5) {
-                    const gestures = ['thinking', 'ok', 'talking', 'bye'];
+                    const gestures = isProcessing ? ['thinking'] : ['thinking', 'talking', 'ok', 'bye'];
                     this.currentGestureMin = gestures[Math.floor(Math.random() * gestures.length)];
                     this.gestureTimeMin = 0;
+                }
+                // Force thinking gesture if processing and no current gesture
+                if (isProcessing && this.currentGestureMin === 'idle') {
+                    this.currentGestureMin = 'thinking';
                 }
             } else {
                 // Random idle behaviors - High variety
