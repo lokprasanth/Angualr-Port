@@ -27,15 +27,32 @@ export class ShowcaseSectionComponent implements AfterViewInit, OnDestroy {
     private lastMouseX = 0;
     private velocity = 0.5; 
     private animationId = 0;
+    private currentRadius = 260;
+    private resizeObserver!: ResizeObserver;
 
     ngAfterViewInit(): void {
         if (isPlatformBrowser(this.platformId)) {
+            this.setupResizeObserver();
             this.startAnimation();
         }
     }
 
+    private setupResizeObserver(): void {
+        const updateRadius = () => {
+            if (!this.orbitRef) return;
+            const width = this.orbitRef.nativeElement.clientWidth;
+            // Adaptive radius: 45% of width, capped between 100 and 300
+            this.currentRadius = Math.max(100, Math.min(300, width * 0.45));
+        };
+
+        this.resizeObserver = new ResizeObserver(() => updateRadius());
+        this.resizeObserver.observe(this.orbitRef.nativeElement);
+        updateRadius();
+    }
+
     ngOnDestroy(): void {
         if (this.animationId) cancelAnimationFrame(this.animationId);
+        if (this.resizeObserver) this.resizeObserver.disconnect();
     }
 
     getTags(item: ShowcaseItem): string[] {
@@ -102,7 +119,7 @@ export class ShowcaseSectionComponent implements AfterViewInit, OnDestroy {
             if (this.orbitRef) {
                 const el = this.orbitRef.nativeElement;
                 const nodes = el.querySelectorAll('.skill-node');
-                const radius = window.innerWidth < 768 ? 140 : 260;
+                const radius = this.currentRadius;
                 
                 nodes.forEach((node: any, i: number) => {
                     const angle = (i / nodes.length) * Math.PI * 2 + (this.rotation * Math.PI / 180);

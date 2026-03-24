@@ -37,18 +37,13 @@ import * as THREE from 'three';
       }
 
       <!-- Speech Bubble -->
-      @if (showSpeechBubble()) {
+      @if (voiceControl.transcript() || voiceControl.lastResponse() || voiceControl.isSpeaking() || voiceControl.isProcessing()) {
         <div class="transcript-bubble" @bubbleScale 
              [class.is-speaking]="voiceControl.isSpeaking()" 
              [class.is-processing]="voiceControl.isProcessing()">
           <div class="bubble-content">
-            <div class="bubble-icon">{{ voiceControl.isSpeaking() ? '🤖' : '👤' }}</div>
-            <div class="text-wrapper">
-              @if (voiceControl.isProcessing() && !voiceControl.transcript()) {
-                <div class="processing-dots"><span>.</span><span>.</span><span>.</span></div>
-              } @else {
-                {{ voiceControl.isSpeaking() ? voiceControl.lastResponse() : (voiceControl.transcript() || '...') }}
-              }
+            <div class="text-wrapper centered">
+              {{ voiceControl.isSpeaking() ? voiceControl.lastResponse() : voiceControl.transcript() }}
             </div>
           </div>
           <div class="bubble-arrow"></div>
@@ -114,8 +109,8 @@ import * as THREE from 'three';
     }
 
     .robot-canvas-wrapper {
-      width: 70px;
-      height: 70px;
+      width: 80px;
+      height: 80px;
       cursor: pointer;
       pointer-events: auto;
       position: relative;
@@ -143,7 +138,41 @@ import * as THREE from 'three';
         border-color: var(--accent-secondary);
         box-shadow: 0 0 40px rgba(var(--accent-secondary-rgb), 0.3);
       }
+
+      @media (max-width: 480px) {
+        width: 35px;
+        height: 35px;
+      }
     }
+
+    .assistant-canvas {
+      width: 100% !important;
+      height: 100% !important;
+      display: block;
+      &.hidden { display: none; }
+    }
+
+    .click-hint {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) scale(0.9);
+        font-size: 0.7rem;
+        color: var(--text-primary);
+        opacity: 0;
+        white-space: nowrap;
+        pointer-events: none;
+        transition: all 0.3s ease;
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        z-index: 5;
+
+        @media (max-width: 480px) {
+            display: none;
+        }
+    }
+
 
     @keyframes ripple {
       0% { transform: scale(0.8); opacity: 0.8; }
@@ -152,11 +181,11 @@ import * as THREE from 'three';
 
     .status-badge {
       position: absolute;
-      top: -45px;
+      top: -35px;
       background: var(--bg-glass);
-      padding: 6px 12px;
-      border-radius: 20px;
-      font-size: 0.75rem;
+      padding: 4px 10px;
+      border-radius: 15px;
+      font-size: 0.65rem;
       font-weight: 700;
       color: var(--text-primary);
       display: flex;
@@ -177,33 +206,62 @@ import * as THREE from 'three';
       &.processing {
         .status-dot { background: var(--accent-secondary); box-shadow: 0 0 10px var(--accent-secondary); }
       }
-    
+    }
 
     @keyframes dotPulse {
       from { opacity: 0.5; transform: scale(0.8); }
       to { opacity: 1; transform: scale(1.1); }
     }
 
-    .bubble-content {
-      display: flex;
-      align-items: flex-start;
-      gap: 12px;
-      color: var(--text-primary);
+    .transcript-bubble {
+      background: var(--bg-glass);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--bg-glass-border);
+      padding: 14px 20px;
+      border-radius: 20px;
+      max-width: 300px;
+      box-shadow: var(--shadow-lg);
+      margin-right: 15px;
+      position: relative;
+      pointer-events: auto;
 
-      .bubble-icon {
-        font-size: 1.2rem;
-        flex-shrink: 0;
-        margin-top: -2px;
+      @media (max-width: 480px) {
+          max-width: calc(100vw - 40px);
+          padding: 10px 18px;
+          margin-right: 0;
+          text-align: center;
+          border-radius: 18px;
+          font-size: 0.85rem;
       }
 
-      .text-wrapper {
-        flex: 1;
-        font-size: 0.9rem;
-        font-weight: 500;
-        line-height: 1.5;
-        text-align: left;
+      &.is-speaking {
+          border-color: var(--accent-primary);
+          box-shadow: 0 0 20px var(--accent-glow);
       }
-    }
+
+      &.is-processing {
+          border-color: var(--accent-secondary);
+          animation: thinkingPulse 1.5s infinite ease-in-out;
+      }
+
+      .bubble-content {
+        display: flex;
+        justify-content: center;
+        color: var(--text-primary);
+
+        .text-wrapper {
+          flex: 1;
+          font-size: 0.9rem;
+          font-weight: 500;
+          line-height: 1.5;
+          text-align: left;
+
+          &.centered {
+            text-align: center;
+          }
+        }
+      }
 
       .processing-dots {
           display: flex;

@@ -33,8 +33,14 @@
 
             <!-- Tooltip / Mini-Card -->
             @if (selectedItem()?.id === item.id) {
-              <div class="node-info" @fadeInUp>
-                <h3>{{ item.title }}</h3>
+              <!-- Mobile Overlay Backdrop -->
+              <div class="node-backdrop" (click)="$event.stopPropagation(); selectedItem.set(null)"></div>
+              
+              <div class="node-info" @fadeInUp (click)="$event.stopPropagation()">
+                <div class="node-info-header">
+                  <h3>{{ item.title }}</h3>
+                  <button class="close-node" (click)="selectedItem.set(null)">✕</button>
+                </div>
                 <p>{{ item.description }}</p>
                 <div class="skill-tags">
                   @for (tag of getTags(item); track tag) {

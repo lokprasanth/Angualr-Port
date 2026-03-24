@@ -26,7 +26,41 @@ export class ContactPageComponent implements AfterViewInit, OnDestroy {
     private camera!: THREE.PerspectiveCamera;
     private animationId = 0;
     private globe!: THREE.Group;
-    private materials: Record<string, THREE.PointsMaterial> = {};
+    private materials: Record<string, THREE.PointsMaterial | THREE.LineBasicMaterial | THREE.ShaderMaterial | THREE.MeshPhongMaterial> = {};
+    
+    // Mouse Interactive State
+    private mouseX = 0;
+    private mouseY = 0;
+    private targetX = 0;
+    private targetY = 0;
+    private baseRotationY = 0;
+    private resizeObserver!: ResizeObserver;
+    
+    // Mouse Interactive State
+    private onMouseMove = (event: MouseEvent) => {
+        const windowHalfX = window.innerWidth / 2;
+        const windowHalfY = window.innerHeight / 2;
+        this.mouseX = (event.clientX - windowHalfX) * 0.001;
+        this.mouseY = (event.clientY - windowHalfY) * 0.001;
+    };
+
+    // Resize Handler
+    private onWindowResize = () => {
+        const canvas = this.canvasRef?.nativeElement;
+        if (!canvas || !this.camera || !this.renderer) return;
+        
+        const parent = canvas.parentElement;
+        const width = parent?.clientWidth || window.innerWidth;
+        const height = parent?.clientHeight || window.innerHeight;
+
+        this.camera.aspect = width / height;
+        this.camera.updateProjectionMatrix();
+        
+        // Pass false to ensure Three.js does not overwrite the CSS inline width/height rules
+        this.renderer.setSize(width, height, false);
+        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    };
+
     formData = {
         name: '',
         email: '',
@@ -61,6 +95,10 @@ export class ContactPageComponent implements AfterViewInit, OnDestroy {
     ngOnDestroy() {
         if (this.animationId) cancelAnimationFrame(this.animationId);
         if (this.renderer) this.renderer.dispose();
+        if (isPlatformBrowser(this.platformId)) {
+            document.removeEventListener('mousemove', this.onMouseMove);
+            if (this.resizeObserver) this.resizeObserver.disconnect();
+        }
     }
 
     private initThreeJS() {
@@ -72,10 +110,20 @@ export class ContactPageComponent implements AfterViewInit, OnDestroy {
         this.camera.position.z = 4;
 
         this.renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
-        this.renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+        this.renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
         this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
         this.createGlobe();
+        
+        if (isPlatformBrowser(this.platformId)) {
+            document.addEventListener('mousemove', this.onMouseMove);
+            const parent = canvas.parentElement;
+            if (parent) {
+                this.resizeObserver = new ResizeObserver(() => this.onWindowResize());
+                this.resizeObserver.observe(parent);
+            }
+        }
+
         this.ngZone.runOutsideAngular(() => this.animate());
     }
 
@@ -86,26 +134,37 @@ export class ContactPageComponent implements AfterViewInit, OnDestroy {
 
         const loader = new THREE.TextureLoader();
         
-        // High-contrast clean maps
+        // High-contrast clean Earth maps
         const textureUrl = isDark 
             ? 'https://unpkg.com/three-globe/example/img/earth-night.jpg' 
             : 'https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg';
 
-        const mapTexture = loader.load(textureUrl);
-        mapTexture.anisotropy = 16;
+        const bumpMapUrl = 'https://unpkg.com/three-globe/example/img/earth-topology.png';
+        const specularMapUrl = 'https://unpkg.com/three-globe/example/img/earth-water.png';
 
-        // Base Earth Sphere - Even lighting (BasicMaterial ignores light)
+        const mapTexture = loader.load(textureUrl);
+        const bumpTexture = loader.load(bumpMapUrl);
+        const specularTexture = loader.load(specularMapUrl);
+
+        mapTexture.anisotropy = 16;
+        
+        // Premium Physically-based render material
         const globeGeo = new THREE.SphereGeometry(1.5, 64, 64);
-        const globeMat = new THREE.MeshBasicMaterial({
+        const globeMat = new THREE.MeshPhongMaterial({
             map: mapTexture,
-            transparent: true,
-            opacity: 1.0,
-            color: isDark ? 0xffffff : 0xeeeeee // Slight tint for light mode
+            bumpMap: bumpTexture,
+            bumpScale: 0.02,
+            specularMap: specularTexture,
+            specular: new THREE.Color('grey'),
+            shininess: isDark ? 15 : 35
         });
+        
+        this.materials['globe'] = globeMat as any;
         const globeMesh = new THREE.Mesh(globeGeo, globeMat);
+        (globeMesh as any).isCore = true;
         this.globe.add(globeMesh);
 
-        // Atmosphere Glow (Shader) - Optimized for flat look
+        // Atmosphere Glow (Shader)
         const atmosMat = new THREE.ShaderMaterial({
             transparent: true,
             uniforms: {
@@ -119,7 +178,7 @@ export class ContactPageComponent implements AfterViewInit, OnDestroy {
                     gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
                     vec3 vNormal = normalize( normalMatrix * normal );
                     vec3 vNormel = normalize( viewVector );
-                    intensity = pow( 0.6 - dot( vNormal, vNormel ), 3.0 );
+                    intensity = pow( 0.65 - dot( vNormal, vNormel ), 3.0 );
                 }
             `,
             fragmentShader: `
@@ -131,18 +190,48 @@ export class ContactPageComponent implements AfterViewInit, OnDestroy {
                 }
             `,
             side: THREE.BackSide,
-            blending: THREE.AdditiveBlending
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
         });
-        const atmosphere = new THREE.Mesh(new THREE.SphereGeometry(1.55, 64, 64), atmosMat);
+        this.materials['halo'] = atmosMat as any;
+        const atmosphere = new THREE.Mesh(new THREE.SphereGeometry(1.65, 64, 64), atmosMat);
         this.globe.add(atmosphere);
 
-        // Add User Location Marker (India: ~20, 78)
+        // Add Marker for location
         this.addMarker(20, 78, accent);
 
         this.scene.add(this.globe);
         
-        // Uniform Ambient Light Only (No shadows)
-        this.scene.add(new THREE.AmbientLight(0xffffff, 1.0));
+        // Premium Lighting Setup for the Phong Material
+        const ambientLight = new THREE.AmbientLight(0xffffff, isDark ? 0.3 : 0.8);
+        this.scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, isDark ? 1.2 : 0.8);
+        dirLight.position.set(5, 3, 5);
+        this.scene.add(dirLight);
+        
+        // Subtle back light for rim effect
+        const backLight = new THREE.DirectionalLight(accent, 0.8);
+        backLight.position.set(-5, -3, -5);
+        this.scene.add(backLight);
+
+        // Initial subtle tilt
+        this.globe.rotation.x = 0.2;
+    }
+
+    private createCircleTexture() {
+        if (!isPlatformBrowser(this.platformId)) return null;
+        const canvas = document.createElement('canvas');
+        canvas.width = 64;
+        canvas.height = 64;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+            ctx.beginPath();
+            ctx.arc(32, 32, 30, 0, Math.PI * 2);
+            ctx.fillStyle = '#ffffff';
+            ctx.fill();
+        }
+        return new THREE.CanvasTexture(canvas);
     }
 
     private addMarker(lat: number, lon: number, color: number) {
@@ -172,16 +261,38 @@ export class ContactPageComponent implements AfterViewInit, OnDestroy {
     }
 
     private updateGlobeTheme(isDark: boolean) {
-        if (!this.materials['globe']) return;
         const accent = isDark ? 0x5fa879 : 0x2d8a4e;
-        this.materials['globe'].color.setHex(accent);
+        if (this.materials['halo']) (this.materials['halo'] as THREE.ShaderMaterial).uniforms['glowColor'].value.setHex(accent);
+        
+        // Reload textures dynamically on theme toggle
+        if (this.globe && this.materials['globe']) {
+            const textureUrl = isDark 
+                ? 'https://unpkg.com/three-globe/example/img/earth-night.jpg' 
+                : 'https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg';
+            const loader = new THREE.TextureLoader();
+            const mat = this.materials['globe'] as unknown as THREE.MeshPhongMaterial;
+            mat.map = loader.load(textureUrl);
+            mat.shininess = isDark ? 15 : 35;
+        }
     }
 
     private animate = () => {
         this.animationId = requestAnimationFrame(this.animate);
+        
+        // Smooth target interpolation for mouse offset
+        this.targetX += (this.mouseX * 0.8 - this.targetX) * 0.05;
+        this.targetY += (this.mouseY * 0.8 - this.targetY) * 0.05;
+
         if (this.globe) {
-            // Slow, steady rotation
-            this.globe.rotation.y += 0.0015;
+            // Constant auto-rotation independent of mouse
+            this.baseRotationY += 0.0015; 
+            
+            // Apply auto-rotation + mouse offset
+            this.globe.rotation.y = this.baseRotationY + this.targetX;
+            this.globe.rotation.x = this.targetY;
+
+            // Constrain X tilt
+            this.globe.rotation.x = Math.max(-0.5, Math.min(0.5, this.globe.rotation.x));
 
             // Pulse Animation for location marker
             this.globe.children.forEach(child => {
