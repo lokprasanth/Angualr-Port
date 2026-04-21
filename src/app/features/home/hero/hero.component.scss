@@ -223,6 +223,8 @@
         order: -1; // Hero robot on top for mobile
         max-height: 380px;
         margin-bottom: -40px;
+        position: relative;
+        z-index: 10; // Prevent hero-text from overlapping the voice-toggle
     }
 }
 

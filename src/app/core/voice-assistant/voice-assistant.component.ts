@@ -101,10 +101,9 @@ import * as THREE from 'three';
       }
 
       @media (max-width: 480px) {
-        right: 15px;
+        right: 20px;
         bottom: calc(20px + env(safe-area-inset-bottom));
         gap: 12px;
-        transform: scale(0.9) translateY(0); // Slight scale down for mobile
       }
     }
 
@@ -140,8 +139,8 @@ import * as THREE from 'three';
       }
 
       @media (max-width: 480px) {
-        width: 35px;
-        height: 35px;
+        width: 60px;
+        height: 60px;
       }
     }
 
@@ -443,7 +442,8 @@ export class VoiceAssistantComponent implements OnInit, AfterViewInit, OnDestroy
 
     private checkScroll() {
         if (typeof window !== 'undefined') {
-            this.isScrolledDown.set(window.scrollY > 400);
+            const threshold = window.innerWidth <= 480 ? 200 : 400;
+            this.isScrolledDown.set(window.scrollY > threshold);
         }
     }
 
