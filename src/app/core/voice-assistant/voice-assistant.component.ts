@@ -452,10 +452,6 @@ export class VoiceAssistantComponent implements OnInit, AfterViewInit, OnDestroy
     }
 
     handleAssistantClick() {
-        if (!this.voiceControl.isSupported()) {
-            alert("Voice recognition is not supported in this browser. Please use Chrome or Safari.");
-            return;
-        }
         this.voiceControl.toggleListening();
     }
 

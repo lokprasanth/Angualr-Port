@@ -101,7 +101,10 @@ export class VoiceControlService {
 
         this.isSupported.set(true);
         this.recognition = new SpeechRecognition();
-        this.recognition.continuous = true;
+        
+        // iOS Safari heavily throttles/errors on continuous=true.
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        this.recognition.continuous = !isIOS;
         this.recognition.interimResults = true;
         this.recognition.lang = this.currentLang();
 
@@ -179,7 +182,14 @@ export class VoiceControlService {
     }
 
     toggleListening() {
-        if (!this.isSupported()) return;
+        if (!this.isSupported()) {
+            if (window.isSecureContext === false) {
+                alert("Voice recognition requires security (HTTPS). Try using localhost or deploying the app.");
+            } else {
+                alert("Voice recognition is not supported in this browser. Please use Chrome or Safari.");
+            }
+            return;
+        }
         if (this.isListening()) {
             this.stop();
         } else {
