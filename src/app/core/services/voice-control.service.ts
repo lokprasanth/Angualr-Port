@@ -202,11 +202,11 @@ export class VoiceControlService {
         try {
             this.recognition.start();
             if (!this.hasWelcomed) {
-                this.speak(this.getRes('welcome'));
+                this.speak(this.getRes('welcome'), true);
                 this.hasWelcomed = true;
                 sessionStorage.setItem('aiWelcomePlayed', 'true');
             } else {
-                this.speak(this.getRes('start'));
+                this.speak(this.getRes('start'), true);
             }
         } catch (e) { this.restartRecognition(); }
     }
@@ -439,14 +439,15 @@ export class VoiceControlService {
         return templates[Math.floor(Math.random() * templates.length)];
     }
 
-    speak(text: string) {
+    speak(text: string, doNotAbort: boolean = false) {
         if (!text || !this.synthesis) {
             this.isProcessing.set(false);
             return;
         }
 
         // Interrupt recognition while speaking to prevent echo feedback
-        if (this.recognition) {
+        // Skip aborting if doNotAbort is true, as aborting instantly kills pending OS microphone prompts!
+        if (this.recognition && !doNotAbort) {
             try { this.recognition.abort(); } catch(e){}
         }
 
