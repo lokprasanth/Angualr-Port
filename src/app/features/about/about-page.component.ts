@@ -16,12 +16,12 @@ export class AboutPageComponent {
         {
             name: 'Frontend Development',
             icon: '🎨',
-            skills: ['React.js', 'JavaScript (ES6+)', 'Redux', 'TypeScript', 'HTML5/CSS3', 'Responsive UI Design', 'Cross-Browser Compatibility']
+            skills: ['React.js', 'UI Engineering', 'JavaScript (ES6+)', 'TypeScript', 'Figma', 'Responsive UI Design']
         },
         {
-            name: 'Testing & QA',
+            name: 'Testing & Analytics',
             icon: '🧪',
-            skills: ['Unit Testing', 'Integration Testing', 'Debugging', 'Bug Tracking']
+            skills: ['UI/UX Testing', 'A/B Testing', 'Web Analytics', 'Debugging', 'Bug Tracking']
         },
         {
             name: 'Tools & Platforms',
@@ -38,9 +38,9 @@ export class AboutPageComponent {
     experience = [
         {
             year: '2023 – 2025',
-            role: 'Frontend / UI Developer',
+            role: 'UI Engineer / Frontend Developer',
             company: 'LDEV Technologies Pvt. Ltd., Hyderabad',
-            desc: 'Developed scalable UI components using React, TypeScript, and Redux. Integrated REST APIs, optimized performance by 30%, and maintained CI/CD pipelines.'
+            desc: 'Engineered scalable user interfaces using React, TypeScript, and Redux. Conducted rigorous UI testing, optimized performance by 30%, and integrated user analytics tracking.'
         },
         {
             year: 'Jun 2025 – Sep 2025',

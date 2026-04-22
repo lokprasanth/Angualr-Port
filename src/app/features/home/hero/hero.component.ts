@@ -50,8 +50,8 @@ export class HeroComponent implements OnInit, AfterViewInit, OnDestroy {
     private isSpeaking = false;
     private speechBubbleTimeout: any;
 
-    roles = ['React Developer', 'Data Analyst', 'QA Tester', 'Problem Solver'];
-    currentRole = signal('Developer');
+    roles = ['UI/UX Developer', 'UI Engineer', 'UI Testing Specialist', 'Analytics Specialist'];
+    currentRole = signal('UI Engineer');
     currentRoleIndex = 0;
     isTyping = signal(true);
     displayText = signal('');
