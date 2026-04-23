@@ -450,35 +450,31 @@ export class VoiceAssistantComponent implements OnInit, AfterViewInit, OnDestroy
     shouldShowSticky(): boolean {
         return !this.voiceControl.isHeroVisible() || this.isScrolledDown();
     }
-
     handleAssistantClick() {
         this.voiceControl.toggleListening();
     }
 
-    private initThreeJS() {
-        const canvas = this.canvasRef?.nativeElement;
+    private setupThreeJS() {
+        const isDark = this.themeService.isDark();
+        const canvas = this.assistantCanvas()?.nativeElement;
         if (!canvas) return;
 
         this.scene = new THREE.Scene();
-        this.camera = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
+        this.camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
         this.camera.position.set(0, 0, 3.5);
 
         this.renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
-        this.renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+        this.renderer.setSize(80, 80);
         this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-        // Lighting
-        const isDark = this.themeService.isDark();
-        const ambient = new THREE.AmbientLight(0xffffff, isDark ? 0.6 : 1.0);
-        this.lights['ambient'] = ambient;
+        const ambient = new THREE.AmbientLight(0xffffff, 0.6);
         this.scene.add(ambient);
         
-        const mainLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        const mainLight = new THREE.DirectionalLight(0xffffff, 1.0);
         mainLight.position.set(2, 2, 2);
         this.scene.add(mainLight);
 
-        const accent1 = isDark ? 0x5fa879 : 0x2d8a4e;
-        this.thrusterGlow = new THREE.PointLight(accent1, 1, 3);
+        this.thrusterGlow = new THREE.PointLight(isDark ? 0xffffff : 0x333333, 1, 3);
         this.thrusterGlow.position.set(0, -1, 0.5);
         this.scene.add(this.thrusterGlow);
 
@@ -490,15 +486,15 @@ export class VoiceAssistantComponent implements OnInit, AfterViewInit, OnDestroy
     private createMiniRobot() {
         this.robotContainer = new THREE.Group();
 
-        const bodyMat = new THREE.MeshStandardMaterial({ 
-            color: 0xa3c6b2, 
-            metalness: 0.6, 
-            roughness: 0.4 
-        });
         const isDark = this.themeService.isDark();
+        const bodyMat = new THREE.MeshStandardMaterial({ 
+            color: isDark ? 0xffffff : 0xced4da, 
+            metalness: 0.5, 
+            roughness: 0.5 
+        });
         const glowMat = new THREE.MeshStandardMaterial({ 
-            color: isDark ? 0x5fa879 : 0x2d8a4e, 
-            emissive: isDark ? 0x5fa879 : 0x2d8a4e, 
+            color: isDark ? 0xffffff : 0x333333, 
+            emissive: isDark ? 0xffffff : 0x333333, 
             emissiveIntensity: 1 
         });
         this.materials['glow'] = glowMat;
