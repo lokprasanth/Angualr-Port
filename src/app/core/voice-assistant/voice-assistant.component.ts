@@ -310,6 +310,13 @@ import * as THREE from 'three';
       max-width: 200px;
       animation: floatHint 3s infinite ease-in-out;
 
+      @media (max-width: 480px) {
+        max-width: 110px;
+        padding: 2px 8px;
+        margin-right: 0;
+        border-radius: 6px;
+      }
+
       .hint-label {
         font-size: 0.65rem;
         font-weight: 800;
@@ -318,6 +325,12 @@ import * as THREE from 'three';
         letter-spacing: 1px;
         margin-bottom: 2px;
         text-align: right;
+
+        @media (max-width: 480px) {
+          font-size: 0.45rem;
+          margin-bottom: 0px;
+          letter-spacing: 0.5px;
+        }
       }
 
       .hint-text {
@@ -325,6 +338,11 @@ import * as THREE from 'three';
         color: var(--text-secondary);
         font-style: italic;
         text-align: right;
+
+        @media (max-width: 480px) {
+          font-size: 0.6rem;
+          line-height: 1.1;
+        }
       }
     }
 
