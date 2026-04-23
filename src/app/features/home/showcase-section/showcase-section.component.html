@@ -1,66 +1,56 @@
-<section class="page-section showcase-explorer" id="showcase">
-    <div class="container">
-      <div class="page-header" @fadeInUp>
-        <span class="section-label">Expertise</span>
-        <h1 class="section-title gradient-text">Infinite Skills Orbit</h1>
-        <p class="section-subtitle">Exploring the galaxy of my technical skills</p>
-      </div>
+<section class="page-section showcase-explorer" id="showcase" #showcaseSection>
+  <div class="container">
+    <div class="page-header" @fadeInUp>
+      <span class="section-label">Mastery</span>
+      <h1 class="section-title gradient-text">Skill Butterfly</h1>
+    </div>
 
-      <div class="orbit-container" 
-           #orbitContainer 
-           (mousedown)="onMouseDown($event)"
-           (touchstart)="onTouchStart($event)"
-           [class.dragging]="isDragging">
-           
-        <!-- Orbit Background Path -->
-        <div class="orbit-path"></div>
-        
-        <!-- Skill Nodes -->
-        @for (item of items(); track item.id; let i = $index) {
-          <div class="skill-node" 
-               [class.active]="selectedItem()?.id === item.id"
-               [style.--index]="i"
-               [style.--total]="items().length"
-               [style.--color]="item.color"
-               (click)="selectItem(item)">
-            
-            <div class="node-wrapper">
-              <div class="node-content">
-                <div class="node-icon">{{ item.icon }}</div>
-              </div>
-              <div class="node-label">{{ item.title }}</div>
+    <div class="butterfly-wrap" [class.exit-mode]="!isVisible()">
+      <!-- THE BUTTERFLY -->
+      <div class="butterfly">
+        <!-- MINI BUTTERFLIES (Particles) -->
+        <div class="mini-butterfly p1"></div>
+        <div class="mini-butterfly p2"></div>
+        <div class="mini-butterfly p3"></div>
+        <div class="mini-butterfly p4"></div>
+
+        <!-- BODY -->
+        <div class="butterfly-body">
+          <div class="antennae"></div>
+          <div class="thorax"></div>
+          <div class="abdomen"></div>
+        </div>
+
+        <!-- LEFT WING -->
+        <div class="wing-set left">
+          <div class="wing-shape upper"></div>
+          <div class="wing-shape lower"></div>
+          <div class="wing-content">
+            @for (item of items().slice(0, 11); track item.id; let i = $index) {
+            <div class="skill-node" [style.--hex-color]="item.color" (click)="selectItem(item)">
+              <img [src]="item.icon" [alt]="item.title" class="skill-logo">
             </div>
-
-            <!-- Tooltip / Mini-Card -->
-            @if (selectedItem()?.id === item.id) {
-              <!-- Mobile Overlay Backdrop -->
-              <div class="node-backdrop" (click)="$event.stopPropagation(); selectedItem.set(null)"></div>
-              
-              <div class="node-info" @fadeInUp (click)="$event.stopPropagation()">
-                <div class="node-info-header">
-                  <h3>{{ item.title }}</h3>
-                  <button class="close-node" (click)="selectedItem.set(null)">✕</button>
-                </div>
-                <p>{{ item.description }}</p>
-                <div class="skill-tags">
-                  @for (tag of getTags(item); track tag) {
-                    <span class="tag">{{ tag }}</span>
-                  }
-                </div>
-              </div>
             }
           </div>
-        }
+        </div>
 
-        <!-- Center Core (Expertise Logo) -->
-        <div class="orbit-center">
-          <div class="orbiting-ring"></div>
-          <div class="core-sphere"></div>
+        <!-- RIGHT WING -->
+        <div class="wing-set right">
+          <div class="wing-shape upper"></div>
+          <div class="wing-shape lower"></div>
+          <div class="wing-content">
+            @for (item of items().slice(11, 22); track item.id; let i = $index) {
+            <div class="skill-node" [style.--hex-color]="item.color" (click)="selectItem(item)">
+              <img [src]="item.icon" [alt]="item.title" class="skill-logo">
+            </div>
+            }
+          </div>
         </div>
       </div>
-
-      <div class="interaction-hint">
-        <span class="hint-icon">🖱️</span> Drag to rotate • Click nodes to explore
-      </div>
     </div>
+
+    <div class="interaction-hint">
+      <span class="hint-icon">🦋</span> Explore the Wings of Expertise
+    </div>
+  </div>
 </section>

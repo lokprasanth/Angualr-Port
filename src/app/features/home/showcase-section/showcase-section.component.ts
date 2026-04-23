@@ -1,146 +1,73 @@
-import { Component, signal, ViewChild, ElementRef, AfterViewInit, OnDestroy, HostListener, inject, PLATFORM_ID, NgZone } from '@angular/core';
+import { Component, signal, ElementRef, ViewChild, AfterViewInit, OnDestroy, PLATFORM_ID, inject } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
-import { RouterLink } from '@angular/router';
 import { SHOWCASE_DATA, ShowcaseItem } from '../../../core/data/portfolio.data';
 import { fadeInUp } from '../../../shared/animations/animations';
 
 @Component({
     selector: 'app-showcase-section',
     standalone: true,
-    imports: [CommonModule, RouterLink],
+    imports: [CommonModule],
     animations: [fadeInUp],
     templateUrl: './showcase-section.component.html',
     styleUrl: './showcase-section.component.scss'
 })
 export class ShowcaseSectionComponent implements AfterViewInit, OnDestroy {
     private platformId = inject(PLATFORM_ID);
-    private ngZone = inject(NgZone);
+    @ViewChild('showcaseSection') showcaseSection!: ElementRef;
 
-    items = signal<ShowcaseItem[]>(SHOWCASE_DATA);
+    isVisible = signal(false);
+    // Comprehensive Skill Set for a Full "Honeybee Nest"
+    items = signal<ShowcaseItem[]>([
+        { id: 'html', icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/html5/html5-original.svg', title: 'HTML5', description: '', color: '#E34F26' },
+        { id: 'css', icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/css3/css3-original.svg', title: 'CSS3', description: '', color: '#1572B6' },
+        { id: 'js', icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/javascript/javascript-original.svg', title: 'JavaScript', description: '', color: '#F7DF1E' },
+        { id: 'ts', icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/typescript/typescript-original.svg', title: 'TypeScript', description: '', color: '#3178C6' },
+        { id: 'react', icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/react/react-original.svg', title: 'React', description: '', color: '#61DAFB' },
+        { id: 'ng', icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/angularjs/angularjs-original.svg', title: 'Angular', description: '', color: '#DD0031' },
+        { id: 'py', icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/python/python-original.svg', title: 'Python', description: '', color: '#3776AB' },
+        { id: 'sql', icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/postgresql/postgresql-original.svg', title: 'SQL', description: '', color: '#336791' },
+        { id: 'bi', icon: 'https://raw.githubusercontent.com/microsoft/PowerBI-Icons/master/SVG/PowerBI.svg', title: 'Power BI', description: '', color: '#F2C811' },
+        { id: 'excel', icon: 'https://www.vectorlogo.zone/logos/microsoft_excel/microsoft_excel-icon.svg', title: 'Excel', description: '', color: '#217346' },
+        { id: 'wp', icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/wordpress/wordpress-plain.svg', title: 'WordPress', description: '', color: '#21759B' },
+        { id: 'tw', icon: 'https://www.vectorlogo.zone/logos/tailwindcss/tailwindcss-icon.svg', title: 'Tailwind', description: '', color: '#06B6D4' },
+        { id: 'boot', icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/bootstrap/bootstrap-original.svg', title: 'Bootstrap', description: '', color: '#7952B3' },
+        { id: 'sass', icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/sass/sass-original.svg', title: 'Sass', description: '', color: '#CC6699' },
+        { id: 'git', icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/git/git-original.svg', title: 'Git', description: '', color: '#F05032' },
+        { id: 'fig', icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/figma/figma-original.svg', title: 'Figma', description: '', color: '#F24E1E' },
+        { id: 'canva', icon: 'https://www.vectorlogo.zone/logos/canva/canva-icon.svg', title: 'Canva', description: '', color: '#00C4CC' },
+        { id: 'jira', icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/jira/jira-original.svg', title: 'Jira', description: '', color: '#0052CC' },
+        { id: 'docs', icon: 'https://www.svgrepo.com/show/353664/docs.svg', title: 'Documentation', description: '', color: '#4285F4' },
+        { id: 'ai', icon: 'https://www.svgrepo.com/show/353380/ai.svg', title: 'AI', description: '', color: '#8E44AD' },
+        { id: 'vercel', icon: 'https://www.vectorlogo.zone/logos/vercel/vercel-icon.svg', title: 'Vercel', description: '', color: '#FFFFFF' },
+        { id: 'netlify', icon: 'https://www.vectorlogo.zone/logos/netlify/netlify-icon.svg', title: 'Netlify', description: '', color: '#00C7B7' },
+        { id: 'pandasai', icon: 'https://pandas-ai.com/favicon.ico', title: 'PandasAI', description: '', color: '#FF6F61' },
+        { id: 'rowsai', icon: 'https://rows.com/favicon.ico', title: 'RowsAI', description: '', color: '#000000' }
+    ]);
     selectedItem = signal<ShowcaseItem | null>(null);
-    isDragging = false;
 
-    @ViewChild('orbitContainer') orbitRef!: ElementRef<HTMLDivElement>;
+    private observer: IntersectionObserver | null = null;
 
-    private rotation = 0;
-    private targetRotation = 0;
-    private lastMouseX = 0;
-    private velocity = 0.5; 
-    private animationId = 0;
-    private currentRadius = 260;
-    private resizeObserver!: ResizeObserver;
-
-    ngAfterViewInit(): void {
+    ngAfterViewInit() {
         if (isPlatformBrowser(this.platformId)) {
-            this.setupResizeObserver();
-            this.startAnimation();
+            this.observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    this.isVisible.set(entry.isIntersecting);
+                });
+            }, { threshold: 0.1 });
+            this.observer.observe(this.showcaseSection.nativeElement);
         }
     }
 
-    private setupResizeObserver(): void {
-        const updateRadius = () => {
-            if (!this.orbitRef) return;
-            const width = this.orbitRef.nativeElement.clientWidth;
-            // Adaptive radius: 45% of width, capped between 100 and 300
-            this.currentRadius = Math.max(100, Math.min(300, width * 0.45));
-        };
-
-        this.resizeObserver = new ResizeObserver(() => updateRadius());
-        this.resizeObserver.observe(this.orbitRef.nativeElement);
-        updateRadius();
+    ngOnDestroy() {
+        if (this.observer) {
+            this.observer.disconnect();
+        }
     }
 
-    ngOnDestroy(): void {
-        if (this.animationId) cancelAnimationFrame(this.animationId);
-        if (this.resizeObserver) this.resizeObserver.disconnect();
-    }
-
-    getTags(item: ShowcaseItem): string[] {
-        return item.description.split(',').map(s => s.trim());
-    }
+    getTags(item: ShowcaseItem): string[] { return []; }
 
     selectItem(item: ShowcaseItem): void {
-        if (this.selectedItem()?.id === item.id) {
-            this.selectedItem.set(null);
-        } else {
-            this.selectedItem.set(item);
-        }
-    }
-
-    @HostListener('window:mousemove', ['$event'])
-    onMouseMove(event: MouseEvent): void {
-        if (!this.isDragging) return;
-        const deltaX = event.clientX - this.lastMouseX;
-        this.targetRotation += deltaX * 0.2;
-        this.lastMouseX = event.clientX;
-        this.velocity = deltaX * 0.1;
-    }
-
-    @HostListener('window:mouseup')
-    onMouseUp(): void {
-        this.isDragging = false;
-    }
-
-    @HostListener('window:touchmove', ['$event'])
-    onTouchMove(event: TouchEvent): void {
-        if (!this.isDragging) return;
-        const touch = event.touches[0];
-        const deltaX = touch.clientX - this.lastMouseX;
-        this.targetRotation += deltaX * 0.2;
-        this.lastMouseX = touch.clientX;
-        this.velocity = deltaX * 0.1;
-    }
-
-    @HostListener('window:touchend')
-    onTouchEnd(): void {
-        this.isDragging = false;
-    }
-
-    onMouseDown(event: MouseEvent): void {
-        this.isDragging = true;
-        this.lastMouseX = event.clientX;
-    }
-
-    onTouchStart(event: TouchEvent): void {
-        this.isDragging = true;
-        this.lastMouseX = event.touches[0].clientX;
-    }
-
-    private startAnimation(): void {
-        const update = () => {
-            if (!this.isDragging) {
-                this.targetRotation += this.velocity;
-                this.velocity *= 0.98;
-                if (Math.abs(this.velocity) < 0.1) this.velocity = 0.1;
-            }
-
-            this.rotation += (this.targetRotation - this.rotation) * 0.1;
-
-            if (this.orbitRef) {
-                const el = this.orbitRef.nativeElement;
-                const nodes = el.querySelectorAll('.skill-node');
-                const radius = this.currentRadius;
-                
-                nodes.forEach((node: any, i: number) => {
-                    const angle = (i / nodes.length) * Math.PI * 2 + (this.rotation * Math.PI / 180);
-                    const x = Math.cos(angle) * radius;
-                    const z = Math.sin(angle) * radius;
-                    
-                    const scale = (z + radius * 1.5) / (radius * 2);
-                    const zIndex = Math.round(scale * 100);
-                    const opacity = Math.max(0.3, scale);
-
-                    node.style.transform = `translate3d(calc(-50% + ${x}px), calc(-50% + 0px), ${z}px) scale(${scale})`;
-                    node.style.zIndex = zIndex;
-                    node.style.opacity = opacity;
-                });
-            }
-
-            this.animationId = requestAnimationFrame(update);
-        };
-
-        this.ngZone.runOutsideAngular(() => {
-            update();
-        });
+        if (!item.title) return;
+        this.selectedItem.set(item);
     }
 }

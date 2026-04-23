@@ -426,7 +426,7 @@ export class VoiceAssistantComponent implements OnInit, AfterViewInit, OnDestroy
 
     ngAfterViewInit() {
         if (isPlatformBrowser(this.platformId)) {
-            setTimeout(() => this.initThreeJS(), 500);
+            setTimeout(() => this.setupThreeJS(), 500);
         }
     }
 
@@ -456,7 +456,7 @@ export class VoiceAssistantComponent implements OnInit, AfterViewInit, OnDestroy
 
     private setupThreeJS() {
         const isDark = this.themeService.isDark();
-        const canvas = this.assistantCanvas()?.nativeElement;
+        const canvas = this.canvasRef?.nativeElement;
         if (!canvas) return;
 
         this.scene = new THREE.Scene();
