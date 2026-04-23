@@ -3,35 +3,48 @@
         <div class="about-layout">
             <!-- LEFT: Modern Visual Stack -->
             <div class="about-visual" @fadeInUp>
-                <div class="visual-stack">
-                    <div class="main-frame glass-card">
-                        <div class="profile-placeholder">
-                            <span>🎭</span>
-                        </div>
-                        <!-- Animated Scanner Effect -->
-                        <div class="scanner-line"></div>
+                <!-- Blob Reveal Image Stack -->
+                <div class="blob-reveal-wrapper"
+                     (mousemove)="onMouseMove($event)"
+                     (mouseleave)="onMouseLeave()"
+                     (touchstart)="onMouseMove($event)"
+                     (touchmove)="onMouseMove($event)"
+                     (touchend)="onMouseLeave()"
+                     #blobWrapper>
+
+                    <!-- Base image (Top Layer, what you see first) -->
+                    <img src="assets/with-helmet.jpg.jpg"
+                         alt="Profile top"
+                         class="blob-img blob-base" />
+
+                    <!-- Reveal layer (Bottom Layer, revealed by cursor) -->
+                    <div class="blob-reveal-layer" #blobLayer>
+                        <img src="assets/without-helmet.jpg"
+                             alt="Profile bottom"
+                             class="blob-img blob-top" />
                     </div>
-                    
-                    <!-- Floating Achievement Cards -->
-                    <div class="floating-badge top-right glass-card" @fadeInRight>
-                        <span class="badge-icon">⚡</span>
-                        <div class="badge-content">
-                            <span class="badge-val">1+</span>
-                            <span class="badge-lbl">Years Exp.</span>
-                        </div>
-                    </div>
-                    
-                    <div class="floating-badge bottom-left glass-card" @fadeInLeft>
-                        <span class="badge-icon">🚀</span>
-                        <div class="badge-content">
-                            <span class="badge-val">20+</span>
-                            <span class="badge-lbl">Projects</span>
-                        </div>
-                    </div>
-                    
-                    <!-- Decorative Grids -->
-                    <div class="deco-dots"></div>
+
+                    <!-- SVG filter for organic wobble -->
+                    <svg class="blob-svg-defs">
+                        <defs>
+                            <filter id="blob-wobble" x="-20%" y="-20%" width="140%" height="140%">
+                                <feTurbulence type="fractalNoise" 
+                                              #turbulence
+                                              baseFrequency="0.02" 
+                                              numOctaves="2" 
+                                              result="noise" />
+                                <feDisplacementMap in="SourceGraphic" 
+                                                   in2="noise" 
+                                                   scale="30" />
+                            </filter>
+                        </defs>
+                    </svg>
+
+                    <div class="blob-hint">Hover to reveal</div>
                 </div>
+
+                <!-- Decorative dots -->
+                <div class="deco-dots"></div>
             </div>
 
             <!-- RIGHT: Bento-style Content -->
