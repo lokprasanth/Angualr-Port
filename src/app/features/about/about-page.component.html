@@ -11,13 +11,13 @@
             <div class="bio-content">
                 <h2 class="bio-title">Hello, I'm <span class="accent-text">Lok Prasanth Alamanda</span></h2>
                 <p class="bio-text">
-                    Passionate UI Engineer and UX Developer with nearly 2 years of experience crafting intuitive, 
-                    scalable, and accessible digital experiences. Proficient in React.js, TypeScript, and modern 
+                    Passionate UI Engineer and UX Developer with nearly 2 years of experience crafting intuitive,
+                    scalable, and accessible digital experiences. Proficient in React.js, TypeScript, and modern
                     UI development methodologies, with a strong focus on pixel-perfect design implementation.
                 </p>
                 <p class="bio-text">
-                    Beyond coding, I bring comprehensive exposure to UI testing frameworks and user analytics, 
-                    allowing me to create interfaces that are not only beautiful but also highly reliable and 
+                    Beyond coding, I bring comprehensive exposure to UI testing frameworks and user analytics,
+                    allowing me to create interfaces that are not only beautiful but also highly reliable and
                     data-driven. I thrive in agile environments where design logic and web engineering intersect.
                 </p>
                 <div class="bio-actions">
@@ -25,38 +25,25 @@
                 </div>
             </div>
             <div class="bio-visual">
-                <div class="blob-reveal-wrapper"
-                     (mousemove)="onMouseMove($event)"
-                     (mouseleave)="onMouseLeave()"
-                     (touchstart)="onMouseMove($event)"
-                     (touchmove)="onMouseMove($event)"
-                     (touchend)="onMouseLeave()"
-                     #blobWrapper>
+                <div class="blob-reveal-wrapper" (mousemove)="onMouseMove($event)" (mouseleave)="onMouseLeave()"
+                    (touchstart)="onMouseMove($event)" (touchmove)="onMouseMove($event)" (touchend)="onMouseLeave()"
+                    #blobWrapper>
 
                     <!-- Base image (Top Layer) -->
-                    <img src="assets/with-helmet.jpg.jpg"
-                         alt="Profile top"
-                         class="blob-img blob-base" />
+                    <img src="assets/with-helmet.jpg" alt="Profile top" class="blob-img blob-base" />
 
                     <!-- Reveal layer (Bottom Layer) -->
                     <div class="blob-reveal-layer" #blobLayer>
-                        <img src="assets/without-helmet.jpg"
-                             alt="Profile bottom"
-                             class="blob-img blob-top" />
+                        <img src="assets/without-helmet.jpg" alt="Profile bottom" class="blob-img blob-top" />
                     </div>
 
                     <!-- SVG filter for organic wobble -->
                     <svg class="blob-svg-defs">
                         <defs>
                             <filter id="blob-wobble-page" x="-20%" y="-20%" width="140%" height="140%">
-                                <feTurbulence type="fractalNoise" 
-                                              #turbulence
-                                              baseFrequency="0.02" 
-                                              numOctaves="2" 
-                                              result="noise" />
-                                <feDisplacementMap in="SourceGraphic" 
-                                                   in2="noise" 
-                                                   scale="30" />
+                                <feTurbulence type="fractalNoise" #turbulence baseFrequency="0.02" numOctaves="2"
+                                    result="noise" />
+                                <feDisplacementMap in="SourceGraphic" in2="noise" scale="6" />
                             </filter>
                         </defs>
                     </svg>
