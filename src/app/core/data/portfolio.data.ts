@@ -68,12 +68,12 @@ export const PROJECTS_DATA: Project[] = [
         liveUrl: 'https://example.com'
     },
     {
-        id: 'hotel-booking-analysis',
-        title: 'Hotel Booking Data Analysis',
-        description: 'Cleaned and wrangled 6,336 booking records, resolving 18% missing data. Conducted KPI analysis including cancellation rates and revenue metrics with Jupyter notebooks.',
-        image: 'assets/report.png',
-        techStack: ['Python', 'Excel', 'Jupyter Notebook', 'EDA'],
-        category: 'Data',
+        id: 'Luxury Hair & Grooming',
+        title: 'Luxury Hair & Grooming Experience',
+        description: 'Experience expert haircuts, grooming, and beauty services tailored just for you. We combine style, comfort, and professionalism to help you look and feel your best every day.',
+        image: 'assets/webpage.png',
+        techStack: ['Figma', 'uiux', 'design', 'Product'],
+        category: 'Product',
         githubUrl: 'https://github.com',
         liveUrl: 'https://example.com'
     },
