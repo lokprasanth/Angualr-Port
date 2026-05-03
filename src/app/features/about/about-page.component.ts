@@ -119,7 +119,7 @@ export class AboutPageComponent implements OnDestroy {
         const wobble = 0.02 + Math.sin(this.time) * 0.005;
 
         const isMobile = window.innerWidth < 768;
-        const baseSize = isMobile ? 40 : 80;
+        const baseSize = isMobile ? 25 : 50;
 
         const el = this.blobLayer.nativeElement;
         el.style.setProperty('--blob-x',    `${this.currentX}%`);
