@@ -6,7 +6,10 @@
             <p class="section-subtitle">A timeline of professional milestones and official recognitions</p>
         </div>
 
-        <div class="awards-bento">
+        <div class="awards-bento" 
+             #carousel
+             (mouseenter)="stopAutoScroll()" 
+             (mouseleave)="startAutoScroll()">
             @for (award of awards(); track award.id; let i = $index) {
             <a [routerLink]="['/awards', award.id]" 
                class="recognition-card glass-card"

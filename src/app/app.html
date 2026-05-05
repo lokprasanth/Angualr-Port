@@ -2,8 +2,13 @@
 @if (isLoading()) {
 <div class="loading-overlay">
   <div class="loading-content">
-    <div class="spinner"></div>
-    <p class="loading-text">Loading Portfolio...</p>
+    <div class="spinner-container">
+      <div class="spinner-glow"></div>
+      <div class="spinner-outer"></div>
+      <div class="spinner-inner"></div>
+      <img src="assets/orbit-center.png" alt="Loading" class="spinner-img" />
+    </div>
+    <p class="loading-text">Initializing Portfolio...</p>
   </div>
 </div>
 }

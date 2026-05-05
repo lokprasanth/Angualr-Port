@@ -19,7 +19,7 @@ export class App {
   isLoading = signal(true);
 
   constructor(private contexts: ChildrenOutletContexts) {
-    setTimeout(() => this.isLoading.set(false), 800);
+    setTimeout(() => this.isLoading.set(false), 2500);
   }
 
   getRouteAnimationData() {

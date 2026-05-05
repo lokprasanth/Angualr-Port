@@ -4,26 +4,22 @@
 }
 
 .awards-bento {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    display: flex;
     gap: 24px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    padding: 20px 0 40px 0; /* Extra bottom padding for hover effects */
+    -webkit-overflow-scrolling: touch;
 
-    @media (max-width: 1200px) {
-        grid-template-columns: repeat(2, 1fr);
-    }
+    /* Modern edge fade effect */
+    mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
+    -webkit-mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
 
-    @media (max-width: 768px) {
-        grid-template-columns: 1fr;
-    }
-
-    @media (max-width: 480px) {
-        gap: 16px;
-    }
-}
-
-.recognition-card.master-block {
-    @media (min-width: 1201px) {
-        grid-column: span 2;
+    /* Hide Scrollbar completely */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge */
+    &::-webkit-scrollbar {
+        display: none; /* Chrome/Safari/Webkit */
     }
 }
 
@@ -38,11 +34,13 @@
     border: 1px solid var(--border-color);
     transition: all var(--transition-smooth);
     overflow: hidden;
+    flex: 0 0 320px; /* Fixed width for carousel items */
+    scroll-snap-align: start;
 
     &.master-block {
-        grid-column: span 1;
         border-color: var(--accent-primary);
         background: linear-gradient(135deg, var(--bg-card), var(--accent-glow));
+        flex: 0 0 400px; /* Make the master block wider in the carousel */
         
         .halo {
             opacity: 0.3 !important;
@@ -53,6 +51,11 @@
     @media (max-width: 480px) {
         padding: 24px;
         gap: 16px;
+        flex: 0 0 85vw; /* Almost full width for better mobile experience */
+        
+        &.master-block {
+            flex: 0 0 85vw; /* Equal width on mobile */
+        }
     }
 
     &:hover {

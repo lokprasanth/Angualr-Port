@@ -133,6 +133,22 @@ export const AWARDS_DATA: Award[] = [
         year: 2025,
         description: 'Focused on advanced automation and scripting using Python.',
         icon: '🐍'
+    },
+    {
+        id: 'uiux-certification',
+        title: 'UI/UX Design Principles',
+        organization: 'Coursera',
+        year: 2022,
+        description: 'Certified in modern UI/UX design paradigms, accessibility, and user-centered design methodologies.',
+        icon: '🎨'
+    },
+    {
+        id: 'hackathon-winner',
+        title: 'Innovation Hackathon Winner',
+        organization: 'TechSprint',
+        year: 2023,
+        description: 'Awarded first place for developing an innovative accessibility-first frontend dashboard.',
+        icon: '🏆'
     }
 ];
 

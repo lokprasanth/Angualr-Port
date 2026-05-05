@@ -340,3 +340,32 @@
         color: var(--text-muted);
     }
 }
+
+// Bottom Bag Image
+.bottom-bag-section {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    margin-top: 100px;
+    margin-bottom: 60px;
+    
+    .bottom-bag-img {
+        max-width: 600px;
+        width: 100%;
+        height: auto;
+        object-fit: contain;
+        
+        @media (max-width: 768px) {
+            max-width: 90vw;
+        }
+    }
+
+    .bag-text {
+        margin-top: 24px;
+        font-size: clamp(1.5rem, 4vw, 2.5rem);
+        text-align: center;
+        color: var(--text-primary);
+        font-weight: 700;
+    }
+}
